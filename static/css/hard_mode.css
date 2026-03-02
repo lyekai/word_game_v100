@@ -328,7 +328,7 @@ body, html {
 }
 .tip-box {
     width: 360px;
-    height: 50px;
+    height: 45px;
     background: rgba(255, 255, 255, 0.3);
     border-radius: 8px;
     display: flex;
@@ -356,7 +356,7 @@ body, html {
 
 .answer-box {
     width: 360px;
-    height: 50px;
+    height: 45px;
     background: rgba(255, 255, 255, 0.2);
     border-radius: 8px;
     display: flex;
@@ -747,4 +747,5 @@ a {
         width: 80vw; /* 寬度 80% */
         height: 50vh; /* 高度 50% */
     }
+
 }
