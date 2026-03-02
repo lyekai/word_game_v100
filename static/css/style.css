@@ -1,0 +1,356 @@
+body, html {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+   overflow: hidden;
+   font-family: "Noto Sans TC", "sans-serif"; 
+   color: white;
+   text-align: center;
+   align-items: center;
+}
+
+#bg-video {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 100%;
+    width: 100%;
+    object-fit: cover;
+    z-index: -1;
+}
+
+.center-content {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    align-items: center;
+    text-align: center;
+}
+
+h1 {
+    font-size: 2.5em;
+    margin-bottom: 30px;
+    text-shadow: 0 0 10px #000;
+}
+#main-menu {
+    z-index: 1;
+}
+.game-box {
+    background: rgba(255, 255, 255, 0.15);
+    border: 2px solid white;
+    width: 200px;
+    height: 200px;
+    border-radius: 10px;
+    padding: 20px;
+    font-size: 1.5em;
+    display: inline-block;
+    cursor: pointer; 
+    transition: transform 0.3s ease, background 0.3s ease;
+    flex-direction: column;
+    align-items: center;
+    z-index: 2;
+}
+
+.game-box:hover {
+    transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.25);
+}
+
+.box-img {
+    height: 150px;
+    width: 150px;
+    object-fit: contain;
+}
+
+/* 通用關卡按鈕基礎樣式（確保定位正確） */
+.level-btn {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+    /* ... 您原本的寬高背景設定 ... */
+}
+
+/* 鎖住狀態的樣式 */
+.level-btn.locked {
+    cursor: not-allowed;
+    pointer-events: none; /* 徹底禁止點擊與跳轉 */
+    color: transparent;   /* 隱藏數字 */
+}
+
+/* 鎖頭圖片的定位 */
+.lock-icon {
+    position: absolute;
+    width: 40%;  /* 根據按鈕大小調整比例 */
+    height: auto;
+    opacity: 0.8;
+}
+#total-stars-box {
+    position: absolute;
+    top: 60px;
+    right: 0;
+    background: rgba(0, 0, 0, 0.7);
+    padding: 10px 20px;
+    border-radius: 50px;
+    border: 2px solid #ffd700;
+    display: flex;
+    align-items: center;
+    box-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+}
+
+#star-icon {
+    color: #ffd700;
+    font-size: 24px;
+    margin-right: 8px;
+}
+
+#star-count {
+    color: white;
+    margin-top: 5px;
+    font-size: 20px;
+    font-weight: bold;
+    font-family: 'Arial', sans-serif;
+}
+/* 按鈕容器佈局 */
+.menu-buttons {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* 刪除紀錄按鈕樣式 */
+.reset-btn {
+    margin-top: 10px;
+    padding: 12px 30px;
+    background-color: #ff4d4d;
+    color: white;
+    border: none;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: 0.3s;
+}
+
+.reset-btn:hover {
+    background-color: #cc0000;
+}
+
+/* 彈出視窗遮罩 */
+.modal-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.8);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 10000; /* 高於所有元件 */
+}
+
+/* 彈出視窗內容 */
+.modal-content {
+    background: #333;
+    padding: 30px;
+    border-radius: 15px;
+    text-align: center;
+    border: 2px solid #ff4d4d;
+    color: white;
+    box-shadow: 0 0 20px rgba(255, 77, 77, 0.5);
+}
+
+.modal-buttons {
+    display: flex;
+    justify-content: center;
+    gap: 20px;
+    margin-top: 20px;
+}
+
+.modal-btn {
+    padding: 10px 25px;
+    border-radius: 5px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+}
+
+.modal-btn.confirm {
+    background-color: #ff4d4d;
+    color: white;
+}
+
+.modal-btn.cancel {
+    background-color: #888;
+    color: white;
+}
+
+/* 用於隱藏 */
+.hidden {
+    display: none;
+}
+
+/* 模式選擇區塊 */
+#mode-menu {
+    display: flex;
+    justify-content: center;
+    gap: 120px;
+}
+.mode-box {
+    width: 250px;
+    height: 250px;
+    border: 2px solid white;
+    background: rgba(255, 255, 255, 0.15);
+    border-radius: 10px;
+    opacity: 0;
+    transform: scale(0.2);
+    transition: all 0.3s ease;
+}
+.mode-box.show {
+    opacity: 1;
+    transform: scale(1);
+}
+.mode-box img {
+    width: 180px;
+    height: 180px;
+    border-radius: 10px;
+}
+.mode-box p {
+    margin-top: 10px;
+    font-size: 1.5em;
+}
+.mode-box:hover {
+    transform: scale(1.05);
+    background: rgba(255, 255, 255, 0.25);
+}
+a {
+    text-decoration: none; /*去掉文字底線*/
+    color: inherit; /*保持文字原來顏色*/
+}
+
+/* ---關卡選單樣式--- */
+.level-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+     gap: 50px;
+    animation: fadeIn 0.5s ease;
+    width: 100%;
+}
+
+/* 桌面版佈局：150px 寬，每列 6 個 */
+.level-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 150px); 
+    gap: 20px;
+    justify-content: center;
+    width: auto;
+}
+.level-btn {
+    width: 150px;
+    height: 150px;
+    background: rgba(255, 255, 255, 0.15);
+    border: 3px solid rgba(255, 255, 255, 0.6);
+    border-radius: 20px;
+    padding-top: 50px;
+    color: white;
+    font-size: 36px; /* 大方塊配大字 */
+    font-weight: bold;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    text-decoration: none;
+    backdrop-filter: blur(5px);
+    box-sizing: border-box;
+}
+
+.level-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+    color: #2c3e50;
+    transform: scale(1.05);
+    border-color: white;
+}
+/* 困難模式專屬樣式 (紅色) */
+.level-btn.hard {
+    background-color: rgba(255, 65, 65, 0.25); /* 紅色 */
+}
+.level-btn.hard:hover {
+    background-color: #C0392B; /* 深紅色 */
+}
+
+h2 { 
+    font-size: 40px 
+}
+
+
+/* --- 響應式條件：768px 以下 (手機/平板) --- */
+.back-btn-alt {
+    margin-top: 10px;
+    padding: 12px 30px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid white;
+    color: white;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-size: 16px;
+}
+
+.back-btn-alt:hover {
+    background: white;
+    color: black;
+}
+
+.hidden { display: none !important; }
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(15px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@media screen and (max-width: 768px) {
+    h1 {
+        font-size: 2em;
+    }
+    #mode-menu {
+        gap: 50px;
+        flex-direction: column;
+    }
+    .mode-box {
+        width: 180px;
+        height: 180px;
+    }
+    .mode-box img {
+        width: 120px;
+        height: 120px;
+    }
+    .level-grid {
+        /* 改為：每列 4 個，方塊改為 70px */
+        grid-template-columns: repeat(4, 90px); 
+        gap: 12px;
+    }
+    .level-btn {
+        width: 90px;
+        height: 90px;
+        font-size: 24px; /* 小方塊配小字 */
+        border-width: 2px;
+        border-radius: 12px;
+        padding-top: 30px;
+    }
+    #total-stars-box{
+        top: 85px;
+        right: 0;
+    }
+    #star-icon {
+        font-size: 16px;
+    }
+    #star-count {
+        font-size: 16px;
+    }
+}

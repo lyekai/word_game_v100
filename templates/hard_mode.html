@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>簡單模式：單字解謎</title>
+    <link rel="stylesheet" href="/static/css/hard_mode.css">
+</head>
+<body>
+    <audio id="easy-bgm" src="/static/audio/music_hard.mp3" loop autoplay></audio>
+
+    <div class="bg-layer"></div>
+    <a href="/" alt="go-back">
+        <button id="back-btn" class="back-btn">回上頁</button>
+    </a>
+
+    <div id="level-indicator">
+        <div class="level-circle active">1</div>
+        <div class="level-circle">2</div>
+        <div class="level-circle">3</div>
+        <div class="level-circle">4</div>
+        <div class="level-circle">5</div>
+        <div class="level-circle">6</div>
+        <div class="level-circle">7</div>
+        <div class="level-circle">8</div>
+        <div class="level-circle">9</div>
+        <div class="level-circle">10</div>
+        <div class="level-circle">11</div>
+        <div class="level-circle">12</div>
+    </div>
+
+    <div id="stars-container">
+        <span class="star word-star">★</span>
+        <span class="star word-star">★</span>
+        <span class="star word-star">★</span>
+        <span class="star sentence-star">★</span>
+        <span class="star sentence-star">★</span>
+        <span class="star sentence-star">★</span>
+        <span class="star sentence-star">★</span>
+
+        <div id="scoring-standards" class="scoring-standards">
+            <h4>如何獲得更多星星?</h4>
+            <ul>
+                <li>⭐ 句子符合題目文法提示要求</li>
+                <li>⭐ 句子使用了正確單字</li>
+                <li>⭐ 沒有基本文法、拼寫問題且空格使用正確</li>
+                <li>⭐ 句子表達流暢，達一定複雜度</li>  
+            </ul>
+        </div>
+    </div>
+
+    <div id="game-box" class="game-box">
+        <div id="left-side">
+            <img id="vague-image" src="" alt="vague-image">
+            <p>猜猜看圖片中有什麼？</p>
+        </div>
+        <div id="right-side">
+            <div id="tip-boxes">
+                <div class="tip-box" id="tip1"></div>
+                <div class="tip-box" id="tip2"></div>
+                <div class="tip-box" id="tip3"></div>
+            </div>
+            <div id="answer-boxes">
+                <div class="answer-box" id="answer1"></div>
+                <div class="answer-box" id="answer2"></div>
+                <div class="answer-box" id="answer3"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="sentence" id="sentence">
+        <p>請用選擇的三個單字造一個句子</p>
+        <input type="text" id="sentence-input" placeholder="在這裡輸入您的英文句子..." class="sentence-input">
+        <button class="confirm-btn hidden">確認</button>
+    </div>
+
+    <div id="answer-area" class="answer-area">
+        <div class="word-card">
+            <div class="cards"></div>
+            <button class="submit-btn hidden">檢查答案</button>
+        </div> 
+        <div class="feed-back">
+            <div id="feedback-container"></div>
+        </div> 
+    </div>
+
+    <div id="image-modal" class="modal-backdrop">
+        <div class="modal-content">
+            <div id="modal-summary-stars" class="modal-summary-stars">
+                <span class="m-star">★</span>
+                <span class="m-star">★</span>
+                <span class="m-star">★</span>
+                <span class="m-star">★</span>
+                <span class="m-star">★</span>
+                <span class="m-star">★</span>
+                <span class="m-star">★</span>
+            </div>
+            <div class="modal-body">
+                <div class="modal-body-flex">
+                    <div class="image-column">
+                        <h3>關卡原始圖片：</h3>
+                        <img id="generated-image" src="" alt="Original Image">
+                    </div>
+                    <div class="image-column">
+                        <h3>您用句子生成的圖片如下：</h3>
+                        <div id="ai-loading-placeholder">圖片生成中...</div>
+                        <img id="ai-generated-image" src="" alt="AI Generated Image" class="hidden">
+                    </div>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button id="next-level-btn">下一關</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/script/hard_mode.js"></script>
+</body>
+</html>

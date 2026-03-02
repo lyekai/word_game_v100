@@ -1,0 +1,134 @@
+body, html {
+    margin: 0; padding: 0; height: 100%;
+    font-family: 'Arial', sans-serif;
+    overflow: hidden;
+}
+/* 背景設定 */
+.bg-container {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: url('/static/image/gallery.jpg') no-repeat center center;
+    background-size: cover;
+    opacity: 0.5; /* 透明度 0.5 */
+    z-index: -1;
+}
+.container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    color: white;
+}
+/* 回上頁按鈕 */
+.back-btn {
+    position: absolute;
+    top: 20px; left: 20px;
+    padding: 10px 20px;
+    background: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: 2px solid white;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+}
+.back-btn:hover { background: white; color: black; }
+
+/* 訊息框 */
+.message-box {
+    background: rgba(0, 0, 0, 0.8);
+    padding: 40px;
+    border-radius: 15px;
+    text-align: center;
+    box-shadow: 0 0 20px rgba(255, 255, 255, 0.2);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+h2 { margin: 0; font-size: 1.5rem; letter-spacing: 2px; }
+
+/* 讓內容可以捲動 */
+.gallery-container {
+    width: 90%;
+    max-width: 800px;
+    height: 80vh;
+    overflow-y: auto;
+    margin-top: 60px;
+    padding: 20px;
+}
+
+/* 每一條作品的橫向框架 */
+.portfolio-item {
+    display: flex;
+    min-height: 200px; /* 改用 min-height */
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    margin-bottom: 20px;
+    border-radius: 15px;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    overflow: hidden;
+    position: relative;
+    transition: 0.3s;
+}
+
+/* 左側圖片 */
+.portfolio-item img.main-img {
+    width: 200px;
+    height: 200px;
+    object-fit: cover;
+}
+
+/* 右側文字資訊 */
+.info-content {
+    padding: 15px;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.info-content p {
+    margin: 5px 0;
+    font-size: 14px;
+    color: #eee;
+}
+
+.info-content .sentence-text {
+    font-style: italic;
+    color: #fff;
+    font-size: 16px;
+    font-weight: bold;
+}
+
+.info-content .star-text {
+    color: #ffd700;
+    font-size: 18px;
+}
+
+/* 刪除按鈕 */
+.delete-btn {
+    position: absolute;
+    right: 15px;
+    bottom: 15px;
+    width: 30px;
+    height: 30px;
+    background: rgba(255, 0, 0, 0.7);
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: 0.2s;
+}
+
+.delete-btn:hover { background: red; transform: scale(1.1); }
+.delete-btn img { width: 25px; height: 25px; }
+
+
+@media screen and (max-width: 768px) {
+    .message-box {
+        width: 70%;
+        padding: 20px;
+        border-radius: 15px;
+        text-align: center;
+    }
+}

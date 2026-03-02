@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的作品集 - 英文單字解謎</title>
+    <link rel="stylesheet" href="/static/css/portfolio.css">
+</head>
+<body>
+    <audio id="easy-bgm" src="/static/audio/gallery.mp3" loop autoplay></audio>
+
+    <div class="bg-container"></div>
+    
+    <button class="back-btn" onclick="location.href='/'">← 返回首頁</button>
+
+    <div class="container">
+        <div class="message-box">
+            <h2>目前還沒有作品哦<br>趕緊造句取得吧！</h2>
+        </div>
+    </div>
+</body>
+<script>
+    function renderPortfolio() {
+        const container = document.querySelector('.container');
+        const data = JSON.parse(localStorage.getItem('userPortfolio')) || [];
+
+        // 檢查資料是否真的存在
+        console.log("正在讀取作品集資料:", data);
+
+        if (data.length === 0) {
+            container.innerHTML = `
+                <div class="message-box">
+                    <h2>目前還沒有作品哦<br>趕緊造句取得吧！</h2>
+                </div>`;
+            return;
+        }
+
+        // 核心修正：直接替換掉原本的 message-box
+        let htmlContent = '<div class="gallery-container" id="gallery-list">';
+        
+        data.forEach((item, index) => {
+            const starCount = parseInt(item.stars) || 0;
+            const starsStr = '★'.repeat(starCount);
+            
+            htmlContent += `
+                <div class="portfolio-item">
+                    <img src="${item.image}" class="main-img" alt="Work">
+                    <div class="info-content">
+                        <p style="font-size: 12px; opacity: 0.7; color: #000">🕒 ${item.time}</p>
+                        <p style="font-size: 16px; opacity: 0.7; color: #000">📍 ${item.mode} - 第 ${item.level < 10 ? '0'+item.level : item.level} 關</p>
+                        <p class="sentence-text" style="text-shadow: 0 0 10px #000;">"${item.sentence}"</p>
+                        <p class="star-text" style="text-shadow: 0 0 10px #000;">${starsStr}</p>
+                    </div>
+                    <button class="delete-btn" onclick="deleteItem(${index})">
+                        <img src="/static/image/trash.png" alt="Delete" style="width:20px;">
+                    </button>
+                </div>
+            `;
+        });
+
+        htmlContent += '</div>';
+        container.innerHTML = htmlContent;
+    }
+
+    function deleteItem(index) {
+        if (confirm("確定要刪除這張珍貴的作品嗎？")) {
+            let data = JSON.parse(localStorage.getItem('userPortfolio')) || [];
+            data.splice(index, 1);
+            localStorage.setItem('userPortfolio', JSON.stringify(data));
+            renderPortfolio(); // 重新整理畫面
+        }
+    }
+
+    // 初始化執行
+    window.onload = renderPortfolio;
+</script>
+</html>

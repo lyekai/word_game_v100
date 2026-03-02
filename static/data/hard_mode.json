@@ -1,0 +1,111 @@
+[
+    {
+        "level": 1,
+        "image_vague": "/static/image_vague/B1pizza_kite_grassland.jpg",
+        "image_origin": "/static/image_origin/B1pizza_kite_grassland.jpg",
+        "tip": ["食品", "物件", "地點"],
+        "answer": ["pizza", "kite", "grassland"],
+        "show": ["pizza 披薩", "kite 風箏", "grassland 草地"],
+        "sentence":["使用 What is it/are they doing? 句型造句","使用 These/Those/They are 造句"]
+    },
+    {
+        "level": 2,
+        "image_vague": "/static/image_vague/B2computer_coffee_office.jpg",
+        "image_origin": "/static/image_origin/B2computer_coffee_office.jpg",
+        "tip": ["物件", "食品", "地點"],
+        "answer": ["computer", "coffee", "office"],
+        "show": ["computer 電腦", "coffee 咖啡", "office 辦公室"],
+        "sentence":["使用 What is it/are they doing? 句型造句","使用 These/Those/They are 造句"]
+    },
+    {
+        "level": 3,
+        "image_vague": "/static/image_vague/B3television_sofa_living room.jpg",
+        "image_origin": "/static/image_origin/B3television_sofa_living room.jpg",
+        "tip": ["物件", "物件", "地點"],
+        "answer": ["television", "sofa", "living room"],
+        "show": ["television 電視", "sofa 沙發", "living room 客廳"],
+        "sentence":["使用 What is it/are they doing? 句型造句","使用 These/Those/They are 造句"]
+    },
+    {
+        "level": 4,
+        "image_vague": "/static/image_vague/B4clock_blackboard_classroom.jpg",
+        "image_origin": "/static/image_origin/B4clock_blackboard_classroom.jpg",
+        "tip": ["物件", "物件", "地點"],
+        "answer": ["clock", "blackboard", "classroom"],
+        "show": ["clock 時鐘", "blackboard 黑板", "classroom 教室"],
+        "sentence":["使用 What is it/are they doing? 句型造句","使用 These/Those/They are 造句"]
+    },
+    {
+        "level": 5,
+        "image_vague": "/static/image_vague/B5sandwich_robot_factory.jpg",
+        "image_origin": "/static/image_origin/B5sandwich_robot_factory.jpg",
+        "tip": ["食品", "物件", "地點"],
+        "answer": ["sandwich", "robot", "factory"],
+        "show": ["sandwich 三明治", "robot 機器人", "factory 工廠"],
+        "sentence":["使用 What is it/are they doing? 句型造句","使用 These/Those/They are 造句"]
+    },
+    {
+        "level": 6,
+        "image_vague": "/static/image_vague/B6water bottle_badminton_gym.jpg",
+        "image_origin": "/static/image_origin/B6water bottle_badminton_gym.jpg",
+        "tip": ["物件", "物件", "地點"],
+        "answer": ["bottle", "badminton", "gym"],
+        "show": ["bottle 水壺", "badminton 羽球", "gym 體育館"],
+        "sentence":["使用 What is it/are they doing? 句型造句","使用 These/Those/They are 造句"]
+    },
+    {
+        "level": 7,
+        "image_vague": "/static/image_vague/B7basketball_scarf_park.jpg",
+        "image_origin": "/static/image_origin/B7basketball_scarf_park.jpg",
+        "tip": ["物件", "物件", "地點"],
+        "answer": ["basketball", "scarf", "park"],
+        "show": ["basketball 籃球", "scarf 圍巾", "park 公園"],
+        "sentence":["使用 What is it/are they doing? 句型造句","使用 These/Those/They are 造句"]
+    },
+    {
+        "level": 8,
+        "image_vague": "/static/image_vague/B8glasses_necklaces_boutique.jpg",
+        "image_origin": "/static/image_origin/B8glasses_necklaces_boutique.jpg",
+        "tip": ["物件", "人物", "地點"],
+        "answer": ["glasses", "madam", "boutique"],
+        "show": ["glasses 眼鏡", "madam 女士", "boutique 精品店"],
+        "sentence":["使用 What is it/are they doing? 句型造句","使用 These/Those/They are 造句"]
+    },
+    {
+        "level": 9,
+        "image_vague": "/static/image_vague/B9bathtub_toilet_bathroom.jpg",
+        "image_origin": "/static/image_origin/B9bathtub_toilet_bathroom.jpg",
+        "tip": ["物件", "物件", "地點"],
+        "answer": ["bathtub", "toilet", "bathroom"],
+        "show": ["bathtub 浴缸", "toilet 馬桶", "bathroom 浴室"],
+        "sentence":["使用 What is it/are they doing? 句型造句","使用 These/Those/They are 造句"]
+    },
+    {
+        "level": 10,
+        "image_vague": "/static/image_vague/B10campsite_tent_guitar.jpg",
+        "image_origin": "/static/image_origin/B10campsite_tent_guitar.jpg",
+        "tip": ["地點", "物件", "物件"],
+        "answer": ["campsite", "tent", "guitar"],
+        "show": ["campsite 營地", "tent 帳篷", "guitar 吉他"],
+        "sentence":["使用 What is it/are they doing? 句型造句","使用 These/Those/They are 造句"]
+    },
+    {
+        "level": 11,
+        "image_vague": "/static/image_vague/B11magnifier_pasta_scientist.jpg",
+        "image_origin": "/static/image_origin/B11magnifier_pasta_scientist.jpg",
+        "tip": ["物件", "食品", "職業"],
+        "answer": ["magnifier", "pasta", "scientist"],
+        "show": ["magnifier 放大鏡", "pasta 義大利麵", "scientist 科學家"],
+        "sentence":["使用 What is it/are they doing? 句型造句","使用 These/Those/They are 造句"]
+    },
+    {
+        "level": 12,
+        "image_vague": "/static/image_vague/B12hero_reporter_street.jpg",
+        "image_origin": "/static/image_origin/B12hero_reporter_street.jpg",
+        "tip": ["人物", "職業", "地點"],
+        "answer": ["hero", "reporter", "street"],
+        "show": ["hero 英雄", "reporter 記者", "street 街道"],
+        "sentence":["使用 What is it/are they doing? 句型造句","使用 These/Those/They are 造句"]
+    }
+]
+
