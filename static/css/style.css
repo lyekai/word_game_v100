@@ -237,7 +237,7 @@ a {
     display: flex;
     flex-direction: column;
     align-items: center;
-     gap: 50px;
+    gap: 50px;
     animation: fadeIn 0.5s ease;
     width: 100%;
 }
@@ -330,14 +330,19 @@ h2 {
         width: 120px;
         height: 120px;
     }
+    #level-title {
+        font-size: 2em;
+    }
     .level-grid {
+        margin-top: 20px;
         /* 改為：每列 4 個，方塊改為 70px */
-        grid-template-columns: repeat(4, 90px); 
+        grid-template-columns: repeat(4, 80px); 
         gap: 12px;
+        row-gap: 12px;
     }
     .level-btn {
-        width: 90px;
-        height: 90px;
+        width: 80px;
+        height: 80px;
         font-size: 24px; /* 小方塊配小字 */
         border-width: 2px;
         border-radius: 12px;
