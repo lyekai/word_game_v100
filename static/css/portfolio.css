@@ -90,6 +90,12 @@ h2 { margin: 0; font-size: 1.5rem; letter-spacing: 2px; }
     font-size: 14px;
     color: #eee;
 }
+.info-content .level-text{
+    font-style: italic;
+    font-size: 16px;
+    opacity: 0.7; 
+    color: #000
+}
 
 .info-content .sentence-text {
     font-style: italic;
@@ -131,4 +137,19 @@ h2 { margin: 0; font-size: 1.5rem; letter-spacing: 2px; }
         border-radius: 15px;
         text-align: center;
     }
+    .portfolio-item img.main-img {
+        width: 150px;
+        height: 150px;
+    }
+    .info-content .level-text{
+        font-size: 12px;
+    }
+    .info-content .sentence-text {
+        font-size: 16px;
+    }
+}
+        border-radius: 15px;
+        text-align: center;
+    }
+
 }
