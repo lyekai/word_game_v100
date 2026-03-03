@@ -46,8 +46,8 @@
                 <div class="portfolio-item">
                     <img src="${item.image}" class="main-img" alt="Work">
                     <div class="info-content">
-                        <p style="font-size: 12px; opacity: 0.7; color: #000">🕒 ${item.time}</p>
-                        <p style="font-size: 16px; opacity: 0.7; color: #000">📍 ${item.mode} - 第 ${item.level < 10 ? '0'+item.level : item.level} 關</p>
+                        <p class="time-text" style="font-size: 12px; opacity: 0.7; color: #000">🕒 ${item.time}</p>
+                        <p class="level-text">📍 ${item.mode} - 第 ${item.level < 10 ? '0'+item.level : item.level} 關</p>
                         <p class="sentence-text" style="text-shadow: 0 0 10px #000;">"${item.sentence}"</p>
                         <p class="star-text" style="text-shadow: 0 0 10px #000;">${starsStr}</p>
                     </div>
