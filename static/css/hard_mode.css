@@ -631,6 +631,7 @@ a {
         transform: translate(-39%, 120%);
         font-size: 0.8em;
         padding: 0 20px;
+        z-index: 1000;
     }
     .sentence p {
         margin: 8px 0;
@@ -655,7 +656,7 @@ a {
     }
     .cards {
         width: 60%;
-        font-size: 12px;
+        font-size: 16px;
     }
     .confirm {
         width: 25%;
@@ -685,7 +686,7 @@ a {
         right: 10px;
         bottom: 10px;
         padding: 5px 9px;
-        font-size: 0.5em;
+        font-size: 1em;
     }
 
     #level-indicator {
