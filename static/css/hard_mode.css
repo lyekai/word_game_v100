@@ -637,9 +637,11 @@ a {
         margin: 8px 0;
     }
     .sentence-input {
-        height: 35px; /* 固定高度，使其看起來像長方形 */
+        height: 35%; 
         width: 80%;
         font-size: 15px;
+        transform: translateY(-15%);
+
     }
     .answer-area {
         width: 90%;
@@ -680,6 +682,7 @@ a {
         padding: 4px 8px;
         border-radius: 8px;
         font-size: 0.8em;
+        transform: translateY(-20%);
     }
 
     .submit-btn {
