@@ -115,7 +115,6 @@ async function showModal() {
 }
 
 function loadLevel(level, isReplay = false) {
-    // 確保 level 是數字
     const targetLevel = Number(level);
     const levelData = levelDataCache.find(item => Number(item.level) === targetLevel);
     
@@ -125,20 +124,18 @@ function loadLevel(level, isReplay = false) {
     }
     
     currentLevel = targetLevel;
-    feedbackCount = 0;
+    feedbackCount = 0; // 【重要】新關卡重置回饋次數為 0
     
-    // 更新 UI 圓圈
     document.querySelectorAll(".level-circle").forEach(c => {
         c.classList.remove("active");
         if (Number(c.textContent) === targetLevel) c.classList.add("active");
     });
 
-    // --- 同步更新所有圖片元件 ---
     const vagueImg = document.getElementById("vague-image");
     const originalImg = document.getElementById("generated-image");
 
     vagueImg.src = levelData.image_vague;
-    originalImg.src = levelData.image_origin; // 初始化時就塞好路徑
+    originalImg.src = levelData.image_origin; 
 
     document.getElementById("tip1").textContent = levelData.tip[0];
     document.getElementById("tip2").textContent = levelData.tip[1];
@@ -151,7 +148,14 @@ function loadLevel(level, isReplay = false) {
         });
         document.getElementById("sentence-input").value = "";
         document.getElementById("feedback-container").innerHTML = "";
-        document.querySelector(".confirm-btn").textContent = "確認";
+
+        // 【重要】新關卡重置按鈕文字為「確認」
+        const confirmBtn = document.querySelector(".confirm-btn");
+        if (confirmBtn) {
+            confirmBtn.textContent = "確認";
+            confirmBtn.disabled = false;
+        }
+
         renderCards(); 
         setSentencePrompt(levelData);
     }
@@ -263,7 +267,7 @@ function evaluateSentenceStars(sentence, userWords) {
 async function handleConfirm() {
     const btn = document.querySelector(".confirm-btn");
     const sentenceInput = document.getElementById("sentence-input");
-    const levelData = levelDataCache.find(item => item.level === currentLevel);
+    const levelData = levelDataCache.find(item => Number(item.level) === Number(currentLevel));
     
     if (!levelData) return;
 
@@ -277,7 +281,9 @@ async function handleConfirm() {
     const currentWordStars = document.querySelectorAll('.word-star.lit').length;
     const currentSentenceStars = document.querySelectorAll('.sentence-star.lit').length;
 
-    if (feedbackCount >= 3) {
+    // --- [修正重點 3]：門檻由 3 次改為 2 次 ---
+    // 當 feedbackCount 為 2 時，代表已經看過兩次 AI 老師的建議了
+    if (feedbackCount >= 2) {
         showModal();
         return;
     }
@@ -300,7 +306,6 @@ async function handleConfirm() {
                 sentence_prompt: currentSentencePrompt, 
                 correct_words: userWords,
                 feedback_count: feedbackCount,
-                // 傳送剛才計算好的星星數
                 word_stars: currentWordStars,
                 sentence_stars: currentSentenceStars
             })
@@ -309,9 +314,11 @@ async function handleConfirm() {
         const data = await res.json();
         
         typeEffect('feedback-container', data.feedback, 30, () => {
-            feedbackCount++; 
+            feedbackCount++; // 增加回饋計數
             btn.disabled = false;
-            if (feedbackCount < 3) {
+
+            // --- [修正重點 4]：更新按鈕文字順序 ---
+            if (feedbackCount < 2) {
                 btn.textContent = "再造一次";
             } else {
                 btn.textContent = "生成圖片";
