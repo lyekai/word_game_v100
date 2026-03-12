@@ -516,9 +516,9 @@ a {
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
     /* 設置寬高並置中 */
     width: 70vw; /* 寬度 70% */
-    height: 60vh; /* 高度 60% */
+    height: 70vh; /* 高度 70% */
     max-width: 800px; /* 避免在超寬螢幕上過大 */
-    max-height: 500px; /* 避免在超高螢幕上過高 */
+    max-height: 600px; /* 避免在超高螢幕上過高 */
     display: flex;
     flex-direction: column;
     justify-content: space-between; /* 讓內容與按鈕區分開 */
@@ -756,7 +756,7 @@ a {
         box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
         /* 設置寬高並置中 */
         width: 80vw; /* 寬度 80% */
-        height: 40vh; /* 高度 40% */
+        height: 45vh; /* 高度 45% */
     }
     .modal-summary-stars {
         font-size: 1.5rem; 
