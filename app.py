@@ -118,7 +118,8 @@ def save_to_csv(data_dict):
         print(f"CSV 寫入失敗: {e}")
 
 # --- AI 分析分析功能 ---
-def get_sentence_analysis(user_sentence: str, correct_selected: list, wrong_selected: list, missing_words: list, target_answers: list, sentence_prompt: str) -> str:
+# --- AI 分析分析功能 (修正參數數量，補上 round_index) ---
+def get_sentence_analysis(user_sentence: str, correct_selected: list, wrong_selected: list, missing_words: list, target_answers: list, sentence_prompt: str, round_index: int) -> str:
     system_instruction = (
         "你是一位國中一年級英文老師。請根據『原始圖片包含的正確單字』進行回饋。"
         "1. 禁止使用任何 Markdown 符號（如 ** 或 __）。"
@@ -126,8 +127,9 @@ def get_sentence_analysis(user_sentence: str, correct_selected: list, wrong_sele
         "3. 畫面引導：必須嚴格參考『原始圖片正確單字』。每次建議增加一個簡單細節。"
     )
 
+    # 這裡可以用 round_index 來微調 Prompt 內容 (選用)
     prompt = (
-        f"【事實參考】\n"
+        f"【教學現況】這是第 {round_index + 1} 次回饋。\n"
         f"圖片中真實存在的正確單字: {', '.join(target_answers)}\n"
         f"學生選中的正確單字: {', '.join(correct_selected)}\n"
         f"學生選錯的單字: {', '.join(wrong_selected)}\n"
@@ -170,14 +172,13 @@ def get_ai_feedback():
         user_sentence = data.get('user_sentence', '').strip()
         sentence_prompt = data.get('sentence_prompt', '').strip()
         selected_cards = data.get('correct_words', []) 
-        round_index = data.get('feedback_count', 0)
+        round_index = int(data.get('feedback_count', 0)) # 0 或 1
         
         word_stars = int(data.get('word_stars', 0))
         sentence_stars = int(data.get('sentence_stars', 0))
         total_stars = word_stars + sentence_stars
 
         json_file = f'static/data/{mode}_mode.json'
-        
         with open(json_file, 'r', encoding='utf-8') as f:
             full_data = json.load(f)
         
@@ -188,18 +189,20 @@ def get_ai_feedback():
         wrong_selected = [w for w in selected_cards if w.lower() not in standard_answers]
         missing_words = [w for w in standard_answers if w.lower() not in [x.lower() for x in selected_cards]]
 
+        # 呼叫分析，傳入 round_index 讓 AI 調整語氣
         feedback = get_sentence_analysis(
             user_sentence, correct_selected, wrong_selected, 
-            missing_words, standard_answers, sentence_prompt
+            missing_words, standard_answers, sentence_prompt, round_index
         )
 
+        # 紀錄至 CSV
         log_data = {
             'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
             'level': f"{mode}_{level_idx}",
-            'feedback_round': f"第{round_index + 1}次回饋",
+            'feedback_round': f"第 {round_index + 1} 次回饋 (總共 2 次)",
             'selected_words': ",".join(selected_cards),
             'user_sentence': user_sentence,
-            'ai_feedback': feedback.replace('\n', ' '),
+            'ai_feedback': feedback.replace('\n', ' '), # 移除換行避免 CSV 跑版
             'word_stars': word_stars,
             'sentence_stars': sentence_stars,
             'total_stars': total_stars
