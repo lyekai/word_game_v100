@@ -120,37 +120,57 @@ async function showModal() {
 }
 
 function loadLevel(level, isReplay = false) {
+    // 1. 基本邊界檢查：確保關卡編號在範圍內
     if (level > levelDataCache.length) { level = 1; }
     if (level < 1) { level = 1; }
+    
     const levelData = levelDataCache.find(item => item.level === level);
     if (!levelData) return;
     
+    // 2. 更新當前狀態
     currentLevel = level;
-    feedbackCount = 0; // 重置回饋次數
+    feedbackCount = 0; // 【關鍵】重置回饋次數，讓新關卡從 0 開始計算
     
+    // 3. 更新畫面上方的關卡圓圈 UI
     document.querySelectorAll(".level-circle").forEach(c => {
         c.classList.remove("active");
         if (parseInt(c.textContent) === level) c.classList.add("active");
     });
 
+    // 4. 更新模糊圖片與提示文字
     document.getElementById("vague-image").src = levelData.image_vague;
     document.getElementById("tip1").textContent = levelData.tip[0];
     document.getElementById("tip2").textContent = levelData.tip[1];
     document.getElementById("tip3").textContent = levelData.tip[2];
 
+    // 5. 如果不是「重玩本關」，則清空所有輸入內容
     if (!isReplay) {
+        // 清空三個單字格子
         document.querySelectorAll(".answer-box").forEach(b => { 
             b.textContent = ""; 
             b.classList.remove("incorrect", "correct", "correct-locked"); 
         });
+
+        // 清空輸入框與 AI 回饋區
         document.getElementById("sentence-input").value = "";
         document.getElementById("feedback-container").innerHTML = "";
+
+        // 【關鍵】將按鈕文字改回初始的「確認」
         const confirmBtn = document.querySelector(".confirm-btn");
-        confirmBtn.textContent = "確認"; // 重置按鈕文字
+        if (confirmBtn) {
+            confirmBtn.textContent = "確認";
+            confirmBtn.disabled = false; // 確保按鈕不是禁用狀態
+        }
+
+        // 重新渲染下方單字卡片並隨機抽取新的句型提示
         renderCards(); 
         setSentencePrompt(levelData);
     }
+
+    // 6. 更新按鈕顯示狀態（檢查單字是否選滿、句子是否輸入）
     updateConfirmButton();
+
+    // 7. 清空畫面的星星狀態（讓它們熄滅）
     document.querySelectorAll(".star").forEach(s => s.classList.remove("lit"));
 }
 
@@ -265,14 +285,15 @@ async function handleConfirm() {
     const userBoxes = [document.getElementById("answer1"), document.getElementById("answer2"), document.getElementById("answer3")];
     const userWords = userBoxes.map(b => b.textContent.trim().toLowerCase()).filter(w => w !== "");
     
-    // --- [修正重點 1]：先計算星星，更新畫面上 class "lit" 的狀態 ---
+    // 計算星星
     evaluateSentenceStars(sentenceInput.value.trim(), userWords);
 
-    // --- [修正重點 2]：從更新後的畫面抓取正確的星星數 ---
     const currentWordStars = document.querySelectorAll('.word-star.lit').length;
     const currentSentenceStars = document.querySelectorAll('.sentence-star.lit').length;
 
-    if (feedbackCount >= 3) {
+    // --- 修改重點：門檻改為 2 ---
+    // 當 feedbackCount 等於 2 時，代表已經按過「確認」(0) 和「再造一次」(1)
+    if (feedbackCount >= 2) { 
         showModal();
         return;
     }
@@ -295,7 +316,6 @@ async function handleConfirm() {
                 sentence_prompt: currentSentencePrompt, 
                 correct_words: userWords,
                 feedback_count: feedbackCount,
-                // 傳送剛才計算好的星星數
                 word_stars: currentWordStars,
                 sentence_stars: currentSentenceStars
             })
@@ -304,9 +324,11 @@ async function handleConfirm() {
         const data = await res.json();
         
         typeEffect('feedback-container', data.feedback, 30, () => {
-            feedbackCount++; 
+            feedbackCount++; // 累加次數
             btn.disabled = false;
-            if (feedbackCount < 3) {
+
+            // --- 修改重點：判斷下次按鈕文字 ---
+            if (feedbackCount < 2) {
                 btn.textContent = "再造一次";
             } else {
                 btn.textContent = "生成圖片";
