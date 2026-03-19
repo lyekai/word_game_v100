@@ -237,7 +237,7 @@ function evaluateSentenceStars(sentence, userWords) {
     
     // 4. 進階豐富度
     const wordCount = s.split(/\s+/).filter(w => w.length > 0).length;
-    const hasAdjective = /\b(beautiful|big|small|happy|sad|red|blue|green|yellow|white|black|fast|slow|good|nice)\b/i.test(sLower);
+    const hasAdjective = /\b(beautiful|handsome|fragrant|delicious|colorful|expensive|cheap|smart|cute|big|huge|wide|narrow|tall|short|small|happy|sad|hot|cold|red|orange|blue|green|yellow|white|black|gray|fast|slow|good|nice|comfortable|dark|bright)\b/i.test(sLower);
 
     // --- 階層式給星 (1-4 顆造句星) ---
     
@@ -254,7 +254,7 @@ function evaluateSentenceStars(sentence, userWords) {
                 stars = 3;
 
                 // ⭐ 第 4 顆造句星 (總計第 7 顆)：句子長度 >= 6 且有形容詞 (流暢度獎勵)
-                if (wordCount >= 12 && hasAdjective) {
+                if (wordCount >= 20 && hasAdjective) {
                     stars = 4;
                 }
             }
