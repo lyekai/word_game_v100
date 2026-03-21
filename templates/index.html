@@ -6,7 +6,67 @@
     <title>英文單字解謎大挑戰</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
+<style>
+    /* 右上角手冊按鈕 */
+    #manual-btn {
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        width: 60px;
+        height: 60px;
+        cursor: pointer;
+        z-index: 1000;
+        transition: transform 0.2s;
+        border: 2px solid #ccc;
+        border-radius: 10px;
+    }
+    #manual-btn:hover { transform: scale(1.1); }
 
+    /* 說明書彈窗背景 */
+    .manual-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.85);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        z-index: 2000;
+    }
+
+    /* 說明書主體：可上下滑動 */
+    .manual-content {
+        background: #fdf6e3;
+        width: 80%;
+        max-width: 600px;
+        max-height: 80vh;
+        border-radius: 15px;
+        padding: 30px;
+        position: relative;
+        overflow-y: auto; /* 關鍵：允許上下滑動 */
+        box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        line-height: 1.8;
+        color: #333;
+    }
+
+    .manual-content h2 { text-align: center; color: #d35400; margin-top: 0; }
+    .manual-content p { margin-bottom: 20px; font-size: 16px; text-align: justify; }
+    .manual-content img { width: 100%; border-radius: 8px; margin-bottom: 20px; border: 2px solid #ddd; }
+
+    /* 叉叉關閉按鈕 */
+    .close-manual {
+        position: absolute;
+        top: 15px;
+        right: 15px;
+        font-size: 30px;
+        cursor: pointer;
+        color: #999;
+        font-weight: bold;
+    }
+    .close-manual:hover { color: #e74c3c; }
+</style>
 <body>
     <video autoplay muted loop id="bg-video">
         <source src="/static/video/bgv-start.mp4" type="video/mp4">
@@ -65,6 +125,24 @@
 
     <audio src="/static/audio/bgm-start.mp3" id="bgm" loop></audio>
 
+    <img src="/static/image/manual.png" id="manual-btn" class="hidden" onclick="openManual()" alt="說明書">
+
+    <div id="manual-modal" class="manual-overlay hidden">
+        <div class="manual-content">
+            <span class="close-manual" onclick="closeManual()">&times;</span>
+            <h2>遊戲操作說明</h2>
+            
+            <p>右上方字卡區設有42張字母開頭由a到z排列的單字卡，字卡區可上下滑動方便尋找目標單字，玩家可藉由左上方題目圖片區的提示進行字卡選擇，嘗試選擇有符合或出現在左側圖片中之單字，如下圖所示：提示線索為「動物」、「物件」、「場景」，則可對應在字卡區選擇符合「動物」、「物件」、「場景」之單字各一個，完成三個單字選取方可點擊「檢查答案」按鈕來初步判斷選擇之單字是否正確，若選擇正確會顯示亮綠色，錯誤則是亮紅色</p>
+            <img src="/static/image/manual_1.png" alt="說明1">
+
+            <p>單字卡選取完成後，下一步為在左下方造句區進行造句，使用所選擇的三個單字並根據括號內句型要求完成造句，若造句框內文字不為空，即可觸發呼叫 ai 回饋之按鈕。ai 回饋共分三部分，第一部分為單字提示，會根據玩家目前選擇錯誤之單字給予指引，不直接提供英文單字，僅提供該單字之特徵供玩家進行調整；第二部分為文法修正，會根據玩家句型、介係詞、大小寫、標點符號、用詞合適度等進行建議；第三部分為句型豐富度建議，可根據目前造句提供修飾建議如形容詞、物件數量、動作等提示</p>
+            <img src="/static/image/manual_2.png" alt="說明2">
+
+            <p>作品集可保留以造句生成之圖片，同時紀錄遊玩時間、關卡、原造句、最終造句獲得之評分等資訊，可讓玩家間互相分享圖片，以及如何造句才能獲得更高分，作品會如同畫廊般由上到下展示，並且若對作品不滿意也可點擊右下方紅色按鈕做刪除</p>
+            <img src="/static/image/manual_3.png" alt="說明3">
+        </div>
+    </div>
+
     <script>
         // 關鍵：新增一個全域變數來記住現在是哪種模式
         let currentSelectedMode = '';
@@ -73,9 +151,20 @@
             document.getElementById('bgm').play();
             document.getElementById('main-menu').classList.add('hidden');
             document.getElementById('mode-menu').classList.remove('hidden');
+            
+            // 【新增】點擊開始遊戲後，讓右上角說明按鈕出現
+            document.getElementById('manual-btn').classList.remove('hidden');
+
             document.querySelectorAll('.mode-box').forEach((box, index) => {
                 setTimeout(() => { box.classList.add('show'); }, index * 400);
             });
+        }
+        function openManual() {
+            document.getElementById('manual-modal').classList.remove('hidden');
+        }
+
+        function closeManual() {
+            document.getElementById('manual-modal').classList.add('hidden');
         }
 
         // 當點擊 簡單/困難 模式時觸發
