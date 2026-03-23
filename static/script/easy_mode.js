@@ -10,15 +10,16 @@ const words = [
 "parrot","forest","snow","rose","duck","tiger","horse","goose","mountain","dessert","fish"
 ];
 function updateStars(type, count) {
-const selector = type === 'word' ? '.word-star' : '.sentence-star';
-const starGroup = document.querySelectorAll(selector);
-starGroup.forEach((star, index) => {
-if (index < count) {
-    star.classList.add('lit');
-} else {
-    star.classList.remove('lit');
-}
-});
+    const selector = type === 'word' ? '.word-star' : '.sentence-star';
+    const starGroup = document.querySelectorAll(selector);
+    starGroup.forEach((star, index) => {
+        if (index < count) {
+            // 統一改成 active，這樣才能對應到你 CSS 寫的顏色
+            star.classList.add('active'); 
+        } else {
+            star.classList.remove('active');
+        }
+    });
 }
 
 function typeEffect(elementId, text, delay = 30, callback = null) {
@@ -56,8 +57,8 @@ async function showModal() {
     const levelData = levelDataCache.find(item => Number(item.level) === Number(currentLevel));
     const userSentence = document.getElementById("sentence-input").value.trim();
     
-    const currentWordStars = document.querySelectorAll('.word-star.lit').length;
-    const currentSentenceStars = document.querySelectorAll('.sentence-star.lit').length;
+    const currentWordStars = document.querySelectorAll('.word-star.active').length;
+    const currentSentenceStars = document.querySelectorAll('.sentence-star.active').length;
     const totalStars = currentWordStars + currentSentenceStars;
 
     const originalImg = document.getElementById("generated-image");
@@ -172,7 +173,10 @@ function loadLevel(level, isReplay = false) {
 
     // 7. 清空畫面的星星狀態（讓它們熄滅）
     document.querySelectorAll(".star").forEach(s => {
-        s.classList.remove("active");
+        s.classList.remove("active", "lit"); 
+    });
+    document.querySelectorAll(".m-star").forEach(s => {
+        s.classList.remove("active-word", "active-sentence", "lit");
     });
 }
 
@@ -290,8 +294,8 @@ async function handleConfirm() {
     // 計算星星
     evaluateSentenceStars(sentenceInput.value.trim(), userWords);
 
-    const currentWordStars = document.querySelectorAll('.word-star.lit').length;
-    const currentSentenceStars = document.querySelectorAll('.sentence-star.lit').length;
+    const currentWordStars = document.querySelectorAll('.word-star.active').length;
+    const currentSentenceStars = document.querySelectorAll('.sentence-star.active').length;
 
     // --- 修改重點：門檻改為 2 ---
     // 當 feedbackCount 等於 2 時，代表已經按過「確認」(0) 和「再造一次」(1)
@@ -458,8 +462,8 @@ function playStarAnimation(totalWordStars, totalSentenceStars) {
 // 🚀 修正 2：強化 handleFinalSave (解鎖進度 + 紀錄星星)
 function handleFinalSave() {
     const mode = 'easy';
-    const currentWordStars = document.querySelectorAll('.word-star.lit').length;
-    const currentSentenceStars = document.querySelectorAll('.sentence-star.lit').length;
+    const currentWordStars = document.querySelectorAll('.word-star.active').length;
+    const currentSentenceStars = document.querySelectorAll('.sentence-star.active').length;
     const totalStars = currentWordStars + currentSentenceStars;
 
     // --- A. 更新星星紀錄 (Star Records) ---
