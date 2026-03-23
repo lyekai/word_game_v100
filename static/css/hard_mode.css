@@ -229,11 +229,19 @@ body, html {
     color: #e0e0e0; /* 預設灰色 */
     transition: color 0.3s, transform 0.3s;
     display: inline-block;
-    -webkit-text-stroke: 1px #555; /* 1px 寬的黑色邊框 */
+    /* -webkit-text-stroke: 1px #555; 1px 寬的黑色邊框 */
 }
-.star.lit {
+/* 修改這裡：把 .lit 改成 .active */
+.word-star.active {
     color: #f1c40f; /* 亮黃色 */
-    text-shadow: 0 0 10px rgba(241, 196, 15, 0.5);
+    text-shadow: 0 0 10px rgba(241, 196, 15, 0.6);
+    transform: scale(1.1);
+}
+
+/* 修改這裡：把 .lit 改成 .active */
+.sentence-star.active {
+    color: #ff8800; /* 亮橘色 */
+    text-shadow: 0 0 12px rgba(255, 136, 0, 0.6);
     transform: scale(1.1);
 }
 #stars-container {
@@ -580,10 +588,18 @@ a {
     display: inline-block;
 }
 
-.m-star.lit {
-    color: #FFD700; /* 金色 */
-    text-shadow: 0 0 10px rgba(255, 215, 0, 0.8);
-    transform: scale(1.2); /* 亮起時稍微放大 */
+/* Modal 前三顆亮起：黃色 */
+.m-star.active-word {
+    color: #FFD700; /* 金色/黃色 */
+    text-shadow: 0 0 15px rgba(255, 215, 0, 0.8);
+    transform: scale(1.2);
+}
+
+/* Modal 後四顆亮起：橘色 */
+.m-star.active-sentence {
+    color: #ff8800; /* 橘色 */
+    text-shadow: 0 0 15px rgba(255, 136, 0, 0.8);
+    transform: scale(1.2);
 }
 
 #replay-btn {
