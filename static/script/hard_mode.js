@@ -160,7 +160,12 @@ function loadLevel(level, isReplay = false) {
         setSentencePrompt(levelData);
     }
     updateConfirmButton();
-    document.querySelectorAll(".star").forEach(s => s.classList.remove("active"));
+    document.querySelectorAll(".star").forEach(s => {
+        s.classList.remove("active", "lit");
+    });
+    document.querySelectorAll(".m-star").forEach(s => {
+        s.classList.remove("active-word", "active-sentence", "lit");
+    });
 }
 
 function renderCards() {
