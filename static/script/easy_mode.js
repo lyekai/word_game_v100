@@ -74,7 +74,7 @@ async function showModal() {
 
     // 顯示視窗並播放星星動畫
     document.getElementById("image-modal").classList.add("visible");
-    playStarAnimation(totalStars);
+    playStarAnimation(currentWordStars, currentSentenceStars);
 
     // 🚀 重點：生圖開始前先執行進度存檔 (確保即使網路斷掉也有過關紀錄)
     handleFinalSave();
@@ -171,7 +171,9 @@ function loadLevel(level, isReplay = false) {
     updateConfirmButton();
 
     // 7. 清空畫面的星星狀態（讓它們熄滅）
-    document.querySelectorAll(".star").forEach(s => s.classList.remove("lit"));
+    document.querySelectorAll(".star").forEach(s => {
+        s.classList.remove("active");
+    });
 }
 
 function renderCards() {
@@ -422,23 +424,34 @@ function saveToPortfolio(data) {
     }
 }
 
-function playStarAnimation(totalStars) {
+function playStarAnimation(totalWordStars, totalSentenceStars) {
     const modalStars = document.querySelectorAll('.m-star');
     const starAudioPath = '/static/audio/star.mp3';
     
-    // 重置 Modal 星星
-    modalStars.forEach(s => s.classList.remove('lit'));
+    // 1. 先全部重置
+    modalStars.forEach(s => s.classList.remove('active-word', 'active-sentence'));
 
-    // 依序亮起
-    for (let i = 0; i < totalStars; i++) {
+    // 2. 依序播放動畫
+    // 先播前三顆 (單字)
+    for (let i = 0; i < totalWordStars; i++) {
         setTimeout(() => {
             if (modalStars[i]) {
-                modalStars[i].classList.add('lit');
-                const audio = new Audio(starAudioPath);
-                audio.volume = 0.4;
-                audio.play().catch(e => {}); 
+                modalStars[i].classList.add('active-word'); // 亮黃色
+                new Audio(starAudioPath).play().catch(e => {});
             }
-        }, i * 400); // 每 0.4 秒亮一顆
+        }, i * 400);
+    }
+
+    // 再播後四顆 (造句)
+    for (let j = 0; j < totalSentenceStars; j++) {
+        // 延遲時間要加上前三顆的時間
+        setTimeout(() => {
+            const starIndex = j + 3; // 從第 4 顆開始
+            if (modalStars[starIndex]) {
+                modalStars[starIndex].classList.add('active-sentence'); // 亮橘色
+                new Audio(starAudioPath).play().catch(e => {});
+            }
+        }, (j + totalWordStars) * 400); 
     }
 }
 
