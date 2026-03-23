@@ -14,9 +14,9 @@ function updateStars(type, count) {
     const starGroup = document.querySelectorAll(selector);
     starGroup.forEach((star, index) => {
         if (index < count) {
-            star.classList.add('lit');
+            star.classList.add('active'); // 配合 CSS
         } else {
-            star.classList.remove('lit');
+            star.classList.remove('active');
         }
     });
 }
@@ -56,8 +56,8 @@ async function showModal() {
     const levelData = levelDataCache.find(item => Number(item.level) === Number(currentLevel));
     const userSentence = document.getElementById("sentence-input").value.trim();
     
-    const currentWordStars = document.querySelectorAll('.word-star.lit').length;
-    const currentSentenceStars = document.querySelectorAll('.sentence-star.lit').length;
+    const currentWordStars = document.querySelectorAll('.word-star.active').length;
+    const currentSentenceStars = document.querySelectorAll('.sentence-star.active').length;
     const totalStars = currentWordStars + currentSentenceStars;
 
     const originalImg = document.getElementById("generated-image");
@@ -75,7 +75,7 @@ async function showModal() {
     document.getElementById("image-modal").classList.add("visible");
     
     // 執行動畫與存檔
-    playStarAnimation(totalStars);
+    playStarAnimation(currentWordStars, currentSentenceStars);
     handleFinalSave(); 
 
     try {
@@ -160,7 +160,7 @@ function loadLevel(level, isReplay = false) {
         setSentencePrompt(levelData);
     }
     updateConfirmButton();
-    document.querySelectorAll(".star").forEach(s => s.classList.remove("lit"));
+    document.querySelectorAll(".star").forEach(s => s.classList.remove("active"));
 }
 
 function renderCards() {
@@ -278,8 +278,8 @@ async function handleConfirm() {
     evaluateSentenceStars(sentenceInput.value.trim(), userWords);
 
     // --- [修正重點 2]：從更新後的畫面抓取正確的星星數 ---
-    const currentWordStars = document.querySelectorAll('.word-star.lit').length;
-    const currentSentenceStars = document.querySelectorAll('.sentence-star.lit').length;
+    const currentWordStars = document.querySelectorAll('.word-star.active').length;
+    const currentSentenceStars = document.querySelectorAll('.sentence-star.active').length;
 
     // --- [修正重點 3]：門檻由 3 次改為 2 次 ---
     // 當 feedbackCount 為 2 時，代表已經看過兩次 AI 老師的建議了
@@ -374,8 +374,11 @@ window.addEventListener("DOMContentLoaded", () => {
         handleFinalSave(); 
 
         // 清除 Modal 星星
-        document.querySelectorAll(".m-star").forEach(s => s.classList.remove("lit"));
-        
+        // 在 next-level-btn 的監聽器內修正：
+        document.querySelectorAll(".m-star").forEach(s => {
+            s.classList.remove("active-word", "active-sentence");
+        });
+                
         setTimeout(() => {
             loadLevel(currentLevel + 1); 
         }, 100);
@@ -422,26 +425,40 @@ function saveToPortfolio(data) {
 }
 
 // 播放 Modal 內的 1-7 顆星星動畫
-function playStarAnimation(totalStars) {
+function playStarAnimation(totalWordStars, totalSentenceStars) {
     const modalStars = document.querySelectorAll('.m-star');
     const starAudioPath = '/static/audio/star.mp3';
-    modalStars.forEach(s => s.classList.remove('lit'));
+    
+    // 重置所有 Modal 星星類別
+    modalStars.forEach(s => s.classList.remove('active-word', 'active-sentence'));
 
-    for (let i = 0; i < totalStars; i++) {
+    // 播放前三顆 (單字) - 亮黃色
+    for (let i = 0; i < totalWordStars; i++) {
         setTimeout(() => {
             if (modalStars[i]) {
-                modalStars[i].classList.add('lit');
+                modalStars[i].classList.add('active-word');
                 new Audio(starAudioPath).play().catch(e => {}); 
             }
         }, i * 400);
+    }
+
+    // 播放後四顆 (造句) - 亮橘色
+    for (let j = 0; j < totalSentenceStars; j++) {
+        setTimeout(() => {
+            const starIndex = j + 3; // 從第四顆開始
+            if (modalStars[starIndex]) {
+                modalStars[starIndex].classList.add('active-sentence');
+                new Audio(starAudioPath).play().catch(e => {}); 
+            }
+        }, (j + totalWordStars) * 400); // 接在單字星之後播放
     }
 }
 
 // 統一處理困難模式的星星紀錄與關卡解鎖
 function handleFinalSave() {
     const mode = 'hard'; // 確保這裡是 hard
-    const currentWordStars = document.querySelectorAll('.word-star.lit').length;
-    const currentSentenceStars = document.querySelectorAll('.sentence-star.lit').length;
+    const currentWordStars = document.querySelectorAll('.word-star.active').length;
+    const currentSentenceStars = document.querySelectorAll('.sentence-star.active').length;
     const totalStars = currentWordStars + currentSentenceStars;
 
     // A. 紀錄最高星數
