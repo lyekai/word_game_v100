@@ -107,7 +107,8 @@ async function showModal() {
                     mode: '簡單模式',
                     level: currentLevel,
                     sentence: userSentence,
-                    stars: totalStars,
+                    wordStars: currentWordStars,      // 存入單字星數 (0-3)
+                    sentenceStars: currentSentenceStars, // 存入造句星數 (0-4)
                     time: new Date().toLocaleString()
                 });
             };
