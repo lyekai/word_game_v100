@@ -103,7 +103,8 @@ async function showModal() {
                     mode: '困難模式',
                     level: currentLevel,
                     sentence: userSentence,
-                    stars: totalStars,
+                    wordStars: currentWordStars,      // 存入單字星數 (0-3)
+                    sentenceStars: currentSentenceStars, // 存入造句星數 (0-4)
                     time: new Date().toLocaleString('zh-TW', { hour12: false })
                 });
             };
@@ -242,7 +243,7 @@ function evaluateSentenceStars(sentence, userWords) {
     
     // 4. 進階豐富度
     const wordCount = s.split(/\s+/).filter(w => w.length > 0).length;
-    const hasAdjective = /\b(beautiful|handsome|fragrant|delicious|colorful|expensive|cheap|smart|cute|big|huge|wide|narrow|tall|short|small|happy|sad|hot|cold|red|orange|blue|green|yellow|white|black|gray|fast|slow|good|nice|comfortable|dark|bright)\b/i.test(sLower);
+    const hasAdjective = /\b(round|square|beautiful|handsome|fragrant|delicious|colorful|expensive|cheap|smart|cute|big|huge|wide|narrow|tall|short|small|happy|sad|hot|cold|red|orange|blue|green|yellow|white|black|gray|fast|slow|good|nice|comfortable|dark|bright)\b/i.test(sLower);
 
     // --- 階層式給星 (1-4 顆造句星) ---
     
