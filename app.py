@@ -3,6 +3,7 @@ import json
 import requests
 import time
 from flask import Flask, render_template, request, jsonify
+from flask_cors import CORS
 import base64
 import csv
 from datetime import datetime
@@ -12,6 +13,7 @@ load_dotenv()
 
 # 初始化 Flask 應用
 app = Flask(__name__)
+CORS(app)
 
 # --- API 配置 ---
 API_KEY = os.getenv("GEMINI_API_KEY") 
