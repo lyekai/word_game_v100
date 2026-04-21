@@ -7,7 +7,7 @@ const words = [
 "universe","crocodile","jellyfish","farm","cow","chicken","turtle","umbrella","raining",
 "pigeon","penguin","fence","waterfall","elephant","bird","bunny","desert","wolf","rock",
 "zebra","lion","boat","ocean","whale","cat","moon","night","koala","ice","grass","puppy",
-"parrot","forest","snow","rose","duck","tiger","horse","goose","mountain","dessert","fish"
+"parrot","forest","snow","rose","duck","tiger","horse","goose","mountain","giraffe","fish"
 ];
 function updateStars(type, count) {
     const selector = type === 'word' ? '.word-star' : '.sentence-star';
