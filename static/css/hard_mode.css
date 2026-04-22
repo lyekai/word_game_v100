@@ -72,12 +72,13 @@ body, html {
     padding: 0 40px;
 }
 .sentence p {
-    margin: 20px 0;
+    font-size: 1.2vw;
+    /* margin: 20px 0; */
 }
 /* 針對造句區域的樣式調整 */
 .sentence-input {
     width: 70%; /* 依照使用者要求設定寬度 */
-    height: 45px; /* 固定高度，使其看起來像長方形 */
+    height: 35%; /* 固定高度，使其看起來像長方形 */
     padding: 0 12px; /* 左右內邊距，上下由 height 決定 */
     line-height: 48px; /* 確保文字垂直居中 */
     box-sizing: border-box; /* 確保 padding/border 不增加總尺寸 */
@@ -92,7 +93,7 @@ body, html {
     white-space: nowrap;
     overflow-x: auto; /* 允許橫向滾動查看超出內容 */
     overflow-y: hidden; /* 隱藏垂直滾動條 */
-    margin-bottom: 50px;
+    /* margin-bottom: 50px; */
 }
 
 .sentence-input::placeholder {
@@ -133,7 +134,7 @@ body, html {
 }
 .cards{
     height: 100%;
-    width: 75%;
+    width: 60%;
     /* border: 3px solid black; */
     display: flex;
     flex-direction: column;
@@ -153,7 +154,7 @@ body, html {
     color: black;
     border-radius: 8px;
     text-align: center;
-    font-size: 1.2em;
+    font-size: 1.2vw;
     cursor: pointer;
     transition: 0.2s;
 }
@@ -202,8 +203,8 @@ body, html {
 }
 
 .level-circle {
-    width: 35px;
-    height: 35px;
+    width: 5vh;
+    height: 5vh;
     border-radius: 50%;
     background: rgb(252, 224, 186);
     color: black;
@@ -225,7 +226,7 @@ body, html {
 }
 /* 星星 */
 .star {
-    font-size: 36px;
+    font-size: 2vw;
     color: #e0e0e0; /* 預設灰色 */
     transition: color 0.3s, transform 0.3s;
     display: inline-block;
@@ -247,7 +248,7 @@ body, html {
 #stars-container {
     display: flex;
     position: absolute;
-    top: 5vh;
+    top: 2vh;
     right: 3vw;
     flex-direction: row;
     gap: 15px;
@@ -293,6 +294,7 @@ body, html {
 /* 左側圖片區 */
 #left-side {
     flex: 1;
+    height: 100%;
     display: flex;
     justify-content: center; /* 水平置中 */
     align-items: center;     /* 垂直置中 */
@@ -301,9 +303,12 @@ body, html {
     /* border: 2px solid black; */
     transform: translate(5%, 5%);
 }
-#left-side img {
-    width: 75%;  /* 可自行調整 */
-    height: auto;
+#left-side p {
+    font-size: 3vh;
+}
+#vague-image {
+    height: 75%;  /* 可自行調整 */
+    width: auto;
     object-fit: cover;
 }
 /* 圖片淡出 */
@@ -321,35 +326,46 @@ body, html {
 /* 右側區域 */
 #right-side {
     flex: 1;
+    height: 100%;
     display: flex;
     flex-direction: column;
-    justify-content: space-between; /* 上下分開 */
+    justify-content: center; /* 上下分開 */
     align-items: center;            /* 水平置中 */
     padding: 20px 0;                /* 上下內距 */
-    gap: 35px;
+    box-sizing: border-box;
+    gap: 10%;
 }
 
 /* 上方提示框 */
 #tip-boxes {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
+    height: 45%; /* 分配這組容器在右側佔用的總高度比例 */
+    width: 100%; /* 寬度佔滿，由內部的 box 自己決定寬度 */
+    align-items: center;
 }
 .tip-box {
-    width: 360px;
-    height: 45px;
+    height: 30%;          /* 佔父容器 (#tip-boxes) 高度的 15% */
+    min-height: 30px;     /* 設定保險值，避免縮得太小 */
+    /* 2. 透過長寬比自動決定寬度 */
+    aspect-ratio: 6 / 1;  
+    width: auto;
     background: rgba(255, 255, 255, 0.3);
     border-radius: 8px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.5em;
+    font-size: 1.5vw;
 }
 /* 下方答案框 */
 #answer-boxes {
     display: flex;
     flex-direction: column;
-    gap: 15px;
+    gap: 10px;
+    height: 45%; /* 分配這組容器在右側佔用的總高度比例 */
+    width: 100%; /* 寬度佔滿，由內部的 box 自己決定寬度 */
+    align-items: center;
 }
 /* 正確答案的綠色背景 */
 .answer-box.correct, .answer-box.correct-locked {
@@ -364,16 +380,18 @@ body, html {
 }
 
 .answer-box {
-    width: 360px;
-    height: 45px;
+    height: 30%;          /* 佔父容器 (#tip-boxes) 高度的 15% */
+    min-height: 30px;     /* 設定保險值，避免縮得太小 */
+    /* 2. 透過長寬比自動決定寬度 */
+    aspect-ratio: 6 / 1;  
+    width: auto;        /* 讓高度由比例決定，不要寫死 % */
     background: rgba(255, 255, 255, 0.2);
     border-radius: 8px;
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 1.5em;
+    font-size: 1.5vw;
 }
-
 
  /* 移除 .ai-title 樣式 */
 #feedback-container {
@@ -434,9 +452,9 @@ body, html {
     position: absolute;
     right: 20px;
     margin-bottom: 20px;
-    padding: 8px 15px;
+    padding: 6px 12px;
     border-radius: 8px;
-    font-size: 1em;
+    font-size: 1vw;
     border: 2px solid white;
     background: rgb(252, 224, 186);
     transition: background 0.3s ease;
@@ -447,7 +465,7 @@ body, html {
     bottom: 20px;
     padding: 8px 15px;
     border-radius: 8px;
-    font-size: 1em;
+    font-size: 1vw;
     border: 2px solid white;
     background: rgb(252, 224, 186);
     transition: background 0.3s ease;
@@ -638,8 +656,8 @@ a {
         height: 30%;
         transform: translate(-50%, -100%);
     }
-    #left-side img {
-        width: 80%;  /* 可自行調整 */
+     #vague-image {
+        height: 70%;  /* 可自行調整 */
     }
     .sentence {
         width: 90%;
@@ -650,6 +668,7 @@ a {
         z-index: 1000;
     }
     .sentence p {
+        font-size: 3.5vw;
         margin: 8px 0;
     }
     .sentence-input {
@@ -725,9 +744,8 @@ a {
         right: 3vw;
         gap: 10px;
     }
-
-    #left-side {
-        font-size: 1em;
+    #left-side p {
+        font-size: 2vh;
     }
     #right-side {
         gap: 20px;
