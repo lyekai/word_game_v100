@@ -761,13 +761,13 @@ a {
     }
 
     .tip-box {
-        width: 120px;
-        height: 25px;
+        height: 25%;
+        min-height: 20px;
         font-size: 0.7em;
     }
     .answer-box {
-        width: 120px;
-        height: 25px;
+        height: 25%;
+        min-height: 20px;
         font-size: 0.7em;
     }
     #feedback-container {
