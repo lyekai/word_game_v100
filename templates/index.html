@@ -6,67 +6,7 @@
     <title>英文單字解謎大挑戰</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
-<style>
-    /* 右上角手冊按鈕 */
-    #manual-btn {
-        position: fixed;
-        top: 20px;
-        right: 20px;
-        width: 60px;
-        height: 60px;
-        cursor: pointer;
-        z-index: 1000;
-        transition: transform 0.2s;
-        border: 2px solid #ccc;
-        border-radius: 10px;
-    }
-    #manual-btn:hover { transform: scale(1.1); }
 
-    /* 說明書彈窗背景 */
-    .manual-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background: rgba(0, 0, 0, 0.85);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        z-index: 2000;
-    }
-
-    /* 說明書主體：可上下滑動 */
-    .manual-content {
-        background: #fdf6e3;
-        width: 80%;
-        max-width: 600px;
-        max-height: 80vh;
-        border-radius: 15px;
-        padding: 30px;
-        position: relative;
-        overflow-y: auto; /* 關鍵：允許上下滑動 */
-        box-shadow: 0 0 20px rgba(0,0,0,0.5);
-        line-height: 1.8;
-        color: #333;
-    }
-
-    .manual-content h2 { text-align: center; color: #d35400; margin-top: 0; }
-    .manual-content p { margin-bottom: 20px; font-size: 16px; text-align: justify; }
-    .manual-content img { width: 100%; border-radius: 8px; margin-bottom: 20px; border: 2px solid #ddd; }
-
-    /* 叉叉關閉按鈕 */
-    .close-manual {
-        position: absolute;
-        top: 15px;
-        right: 15px;
-        font-size: 30px;
-        cursor: pointer;
-        color: #999;
-        font-weight: bold;
-    }
-    .close-manual:hover { color: #e74c3c; }
-</style>
 <body>
     <video autoplay muted loop id="bg-video">
         <source src="/static/video/bgv-start.mp4" type="video/mp4">
