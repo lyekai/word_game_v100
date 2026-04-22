@@ -8,6 +8,7 @@ import csv
 from datetime import datetime
 from dotenv import load_dotenv
 import threading
+import random
 
 load_dotenv()
 
@@ -27,9 +28,9 @@ HF_API_URL = "https://router.huggingface.co/hf-inference/models/black-forest-lab
 
 csv_lock = threading.Lock()
 # 限制同時呼叫 AI 的人數，避免沖垮 API 或佔滿後端執行緒
-# 文字回饋較快，給 10 個名額；生圖很慢，給 3 個名額排隊
+# 文字回饋較快，給 10 個名額；生圖很慢，給 6 個名額排隊
 gemini_semaphore = threading.Semaphore(10)
-image_semaphore = threading.Semaphore(3)
+image_semaphore = threading.Semaphore(6)
 
 # --- 核心 AI 呼叫函式 ---
 def call_gemini_api(prompt: str, system_instruction: str) -> str:
@@ -75,34 +76,31 @@ def call_gemini_api(prompt: str, system_instruction: str) -> str:
             time.sleep(1)
     return "回饋失敗。"
 
-def call_hf_image_api(user_sentence: str) -> str:
+def call_pollinations_api(user_sentence: str) -> str:
     """
-    取代原有的 Pollinations AI，改用 Hugging Face Flux 生成圖片。
-    回傳 Base64 字串供前端直接顯示。
+    改用 Pollinations AI 生成圖片，並轉為 Base64。
     """
     if not user_sentence:
         return None
     
-    headers = {"Authorization": f"Bearer {HF_TOKEN}"}
+    # 加入隨機種子 seed，確保每次造句微調時圖片都會變化，且避免瀏覽器緩存
+    seed = random.randint(0, 999999)
+    # 使用 flux 模型（Pollinations 目前支援的最強模型）
+    url = f"https://image.pollinations.ai/prompt/{user_sentence}?seed={seed}&model=flux&width=512&height=512&nologo=true"
     
     try:
-        # 呼叫 Hugging Face API
-        response = requests.post(HF_API_URL, headers=headers, json={"inputs": user_sentence}, timeout=30)
+        response = requests.get(url, timeout=30)
         
-        if response.status_code == 503:
-            print("HF 模型正在加載中...")
-            return None # 或者可以丟出特定錯誤讓前端提示稍候
-            
         if response.status_code == 200:
-            # 將圖片二進位轉成 Base64
+            # 將圖片二進位轉成 Base64 字串
             img_base64 = base64.b64encode(response.content).decode('utf-8')
             return f"data:image/jpeg;base64,{img_base64}"
         else:
-            print(f"HF API 報錯: {response.status_code} - {response.text}")
+            print(f"Pollinations 報錯: {response.status_code}")
             return None
             
     except Exception as e:
-        print(f"HF 請求異常: {e}")
+        print(f"Pollinations 請求異常: {e}")
         return None
 
 # --- CSV 紀錄功能 ---
@@ -233,8 +231,8 @@ def generate_image():
             word_stars = int(data.get('word_stars', 0))
             sentence_stars = int(data.get('sentence_stars', 0))
 
-            # --- 這裡改用 Hugging Face 工具 ---
-            image_base64_url = call_hf_image_api(user_sentence)
+            # --- 這裡改用 Pollinations ---
+            image_base64_url = call_pollinations_api(user_sentence)
             
             log_data = {
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -242,7 +240,7 @@ def generate_image():
                 'feedback_round': '生成圖片階段',
                 'selected_words': ",".join(data.get('correct_words', [])),
                 'user_sentence': user_sentence,
-                'ai_feedback': 'HuggingFace Image Generated' if image_base64_url else 'Failed',
+                'ai_feedback': 'Pollinations Image Generated' if image_base64_url else 'Failed',
                 'word_stars': word_stars,
                 'sentence_stars': sentence_stars,
                 'total_stars': word_stars + sentence_stars
@@ -252,7 +250,7 @@ def generate_image():
             if not image_base64_url:
                 return jsonify({"error": "image_failed"}), 200
 
-            # 回傳 Base64 URL 給前端 JS
+            # 前端 JS 接收到這個 JSON 後，會直接把 URL 塞進 <img> 標籤
             return jsonify({
                 "image_url": image_base64_url,
                 "status": "success"
