@@ -3,17 +3,16 @@ import json
 import requests
 import time
 from flask import Flask, render_template, request, jsonify
-from flask_cors import CORS
 import base64
 import csv
 from datetime import datetime
 from dotenv import load_dotenv
+import threading
 
 load_dotenv()
 
 # 初始化 Flask 應用
 app = Flask(__name__)
-CORS(app)
 
 # --- API 配置 ---
 API_KEY = os.getenv("GEMINI_API_KEY") 
@@ -26,8 +25,13 @@ GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/"
 HF_TOKEN = os.getenv("HF_TOKEN")
 HF_API_URL = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
 
-# --- 核心 AI 呼叫函式 ---
+csv_lock = threading.Lock()
+# 限制同時呼叫 AI 的人數，避免沖垮 API 或佔滿後端執行緒
+# 文字回饋較快，給 10 個名額；生圖很慢，給 3 個名額排隊
+gemini_semaphore = threading.Semaphore(10)
+image_semaphore = threading.Semaphore(3)
 
+# --- 核心 AI 呼叫函式 ---
 def call_gemini_api(prompt: str, system_instruction: str) -> str:
     """呼叫 Gemini API，加入重試機制與精準錯誤處理。"""
     if not API_KEY:
@@ -111,11 +115,12 @@ def save_to_csv(data_dict):
     
     file_exists = os.path.isfile(file_path)
     try:
-        with open(file_path, mode='a', newline='', encoding='utf-8-sig') as f:
-            writer = csv.DictWriter(f, fieldnames=fieldnames)
-            if not file_exists:
-                writer.writeheader()
-            writer.writerow(data_dict)
+        with csv_lock:
+            with open(file_path, mode='a', newline='', encoding='utf-8-sig') as f:
+                writer = csv.DictWriter(f, fieldnames=fieldnames)
+                if not file_exists:
+                    writer.writeheader()
+                writer.writerow(data_dict)
     except Exception as e:
         print(f"CSV 寫入失敗: {e}")
 
@@ -167,92 +172,94 @@ def portfolio():
 
 @app.route("/api/ai_feedback", methods=["POST"])
 def get_ai_feedback():
-    try:
-        data = request.get_json()
-        mode = data.get('mode', 'easy')
-        level_idx = data.get('level', 1)
-        user_sentence = data.get('user_sentence', '').strip()
-        sentence_prompt = data.get('sentence_prompt', '').strip()
-        selected_cards = data.get('correct_words', []) 
-        round_index = int(data.get('feedback_count', 0)) # 0 或 1
-        
-        word_stars = int(data.get('word_stars', 0))
-        sentence_stars = int(data.get('sentence_stars', 0))
-        total_stars = word_stars + sentence_stars
+    with gemini_semaphore:
+        try:
+            data = request.get_json()
+            mode = data.get('mode', 'easy')
+            level_idx = data.get('level', 1)
+            user_sentence = data.get('user_sentence', '').strip()
+            sentence_prompt = data.get('sentence_prompt', '').strip()
+            selected_cards = data.get('correct_words', []) 
+            round_index = int(data.get('feedback_count', 0)) # 0 或 1
+            
+            word_stars = int(data.get('word_stars', 0))
+            sentence_stars = int(data.get('sentence_stars', 0))
+            total_stars = word_stars + sentence_stars
 
-        json_file = f'static/data/{mode}_mode.json'
-        with open(json_file, 'r', encoding='utf-8') as f:
-            full_data = json.load(f)
-        
-        current_level_data = next((item for item in full_data if item["level"] == int(level_idx)), None)
-        standard_answers = [a.lower() for a in current_level_data["answer"]] if current_level_data else []
-        
-        correct_selected = [w for w in selected_cards if w.lower() in standard_answers]
-        wrong_selected = [w for w in selected_cards if w.lower() not in standard_answers]
-        missing_words = [w for w in standard_answers if w.lower() not in [x.lower() for x in selected_cards]]
+            json_file = f'static/data/{mode}_mode.json'
+            with open(json_file, 'r', encoding='utf-8') as f:
+                full_data = json.load(f)
+            
+            current_level_data = next((item for item in full_data if item["level"] == int(level_idx)), None)
+            standard_answers = [a.lower() for a in current_level_data["answer"]] if current_level_data else []
+            
+            correct_selected = [w for w in selected_cards if w.lower() in standard_answers]
+            wrong_selected = [w for w in selected_cards if w.lower() not in standard_answers]
+            missing_words = [w for w in standard_answers if w.lower() not in [x.lower() for x in selected_cards]]
 
-        # 呼叫分析，傳入 round_index 讓 AI 調整語氣
-        feedback = get_sentence_analysis(
-            user_sentence, correct_selected, wrong_selected, 
-            missing_words, standard_answers, sentence_prompt, round_index
-        )
+            # 呼叫分析，傳入 round_index 讓 AI 調整語氣
+            feedback = get_sentence_analysis(
+                user_sentence, correct_selected, wrong_selected, 
+                missing_words, standard_answers, sentence_prompt, round_index
+            )
 
-        # 紀錄至 CSV
-        log_data = {
-            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            'level': f"{mode}_{level_idx}",
-            'feedback_round': f"第 {round_index + 1} 次回饋 (總共 2 次)",
-            'selected_words': ",".join(selected_cards),
-            'user_sentence': user_sentence,
-            'ai_feedback': feedback.replace('\n', ' '), # 移除換行避免 CSV 跑版
-            'word_stars': word_stars,
-            'sentence_stars': sentence_stars,
-            'total_stars': total_stars
-        }
-        save_to_csv(log_data)
+            # 紀錄至 CSV
+            log_data = {
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'level': f"{mode}_{level_idx}",
+                'feedback_round': f"第 {round_index + 1} 次回饋 (總共 2 次)",
+                'selected_words': ",".join(selected_cards),
+                'user_sentence': user_sentence,
+                'ai_feedback': feedback.replace('\n', ' '), # 移除換行避免 CSV 跑版
+                'word_stars': word_stars,
+                'sentence_stars': sentence_stars,
+                'total_stars': total_stars
+            }
+            save_to_csv(log_data)
 
-        return jsonify({"feedback": feedback})
-    except Exception as e:
-        print(f"Error: {e}")
-        return jsonify({"feedback": "伺服器處理錯誤。"}), 500
+            return jsonify({"feedback": feedback})
+        except Exception as e:
+            print(f"Error: {e}")
+            return jsonify({"feedback": "伺服器處理錯誤。"}), 500
 
 @app.route("/api/generate_image", methods=["POST"])
 def generate_image():
-    try:
-        data = request.get_json()
-        user_sentence = data.get('user_sentence', '').strip()
-        mode = data.get('mode', 'easy')
-        level_idx = data.get('level', 1)
-        word_stars = int(data.get('word_stars', 0))
-        sentence_stars = int(data.get('sentence_stars', 0))
+    with image_semaphore:
+        try:
+            data = request.get_json()
+            user_sentence = data.get('user_sentence', '').strip()
+            mode = data.get('mode', 'easy')
+            level_idx = data.get('level', 1)
+            word_stars = int(data.get('word_stars', 0))
+            sentence_stars = int(data.get('sentence_stars', 0))
 
-        # --- 這裡改用 Hugging Face 工具 ---
-        image_base64_url = call_hf_image_api(user_sentence)
-        
-        log_data = {
-            'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            'level': f"{mode}_{level_idx}",
-            'feedback_round': '生成圖片階段',
-            'selected_words': ",".join(data.get('correct_words', [])),
-            'user_sentence': user_sentence,
-            'ai_feedback': 'HuggingFace Image Generated' if image_base64_url else 'Failed',
-            'word_stars': word_stars,
-            'sentence_stars': sentence_stars,
-            'total_stars': word_stars + sentence_stars
-        }
-        save_to_csv(log_data)
+            # --- 這裡改用 Hugging Face 工具 ---
+            image_base64_url = call_hf_image_api(user_sentence)
+            
+            log_data = {
+                'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+                'level': f"{mode}_{level_idx}",
+                'feedback_round': '生成圖片階段',
+                'selected_words': ",".join(data.get('correct_words', [])),
+                'user_sentence': user_sentence,
+                'ai_feedback': 'HuggingFace Image Generated' if image_base64_url else 'Failed',
+                'word_stars': word_stars,
+                'sentence_stars': sentence_stars,
+                'total_stars': word_stars + sentence_stars
+            }
+            save_to_csv(log_data)
 
-        if not image_base64_url:
-            return jsonify({"error": "image_failed"}), 200
+            if not image_base64_url:
+                return jsonify({"error": "image_failed"}), 200
 
-        # 回傳 Base64 URL 給前端 JS
-        return jsonify({
-            "image_url": image_base64_url,
-            "status": "success"
-        })
-    except Exception as e:
-        print(f"路由報錯: {e}")
-        return jsonify({"error": "server_error"}), 500
+            # 回傳 Base64 URL 給前端 JS
+            return jsonify({
+                "image_url": image_base64_url,
+                "status": "success"
+            })
+        except Exception as e:
+            print(f"路由報錯: {e}")
+            return jsonify({"error": "server_error"}), 500
     
 if __name__ == "__main__":
     app.run(debug=True, host='0.0.0.0', port=5000)
