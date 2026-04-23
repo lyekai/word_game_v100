@@ -77,31 +77,31 @@ def call_gemini_api(prompt: str, system_instruction: str) -> str:
     return "回饋失敗。"
 
 def call_pollinations_api(user_sentence: str) -> str:
-    """
-    改用 Pollinations AI 生成圖片，並轉為 Base64。
-    """
     if not user_sentence:
         return None
     
-    # 加入隨機種子 seed，確保每次造句微調時圖片都會變化，且避免瀏覽器緩存
     seed = random.randint(0, 999999)
-    # 使用 flux 模型（Pollinations 目前支援的最強模型）
     url = f"https://image.pollinations.ai/prompt/{user_sentence}?seed={seed}&model=flux&width=512&height=512&nologo=true"
     
-    try:
-        response = requests.get(url, timeout=30)
-        
-        if response.status_code == 200:
-            # 將圖片二進位轉成 Base64 字串
-            img_base64 = base64.b64encode(response.content).decode('utf-8')
-            return f"data:image/jpeg;base64,{img_base64}"
-        else:
-            print(f"Pollinations 報錯: {response.status_code}")
-            return None
+    # 增加重試機制：給它三次機會，每次失敗稍微等一下再試
+    for attempt in range(3):
+        try:
+            # 加入 timeout 稍微長一點，因為生圖真的很慢
+            response = requests.get(url, timeout=40) 
             
-    except Exception as e:
-        print(f"Pollinations 請求異常: {e}")
-        return None
+            if response.status_code == 200:
+                img_base64 = base64.b64encode(response.content).decode('utf-8')
+                return f"data:image/jpeg;base64,{img_base64}"
+            
+            # 如果遇到 429 或 5xx，等一秒後重試
+            print(f"Pollinations 嘗試第 {attempt+1} 次失敗，狀態碼: {response.status_code}")
+            time.sleep(1.5) 
+            
+        except Exception as e:
+            print(f"Pollinations 請求異常: {e}")
+            time.sleep(1)
+            
+    return None # 三次都失敗才顯示休息
 
 # --- CSV 紀錄功能 ---
 def save_to_csv(data_dict):
