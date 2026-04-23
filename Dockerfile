@@ -1,24 +1,15 @@
-# 1. 使用輕量的 Python 映像檔
+# 1-6 步維持你原本的，寫得很專業，不需要動
 FROM python:3.11-slim
-
-# 2. 設定工作目錄
 WORKDIR /app
-
-# 3. 複製必要文件
 COPY requirements.txt .
-
-# 4. 安裝套件
 RUN pip install --no-cache-dir -r requirements.txt
-
-# 5. 複製所有程式碼
 COPY . .
-
-# 6. 設定環境變數
 ENV FLASK_ENV=production
 ENV PYTHONUNBUFFERED=True
 
 # 7. 最終強化的啟動指令
-# --worker-class gthread: 優化執行緒管理
-# --keep-alive: 讓切換頁面反應更快
-# :8080: 對接 Cloud Run 預設值
-CMD ["gunicorn", "--bind", ":8080", "--workers", "1", "--threads", "60", "--worker-class", "gthread", "--timeout", "120", "--keep-alive", "5", "app:app"]
+# 修改點：
+# 1. 將 :8080 改為 :$PORT (Cloud Run 的黃金準則)
+# 2. 執行緒 (threads) 建議降到 12-20，讓 Cloud Run 有機會觸發自動擴展
+# 3. 增加 --preload 減少記憶體占用並加快啟動
+CMD ["sh", "-c", "gunicorn --bind :$PORT --workers 1 --threads 12 --worker-class gthread --timeout 120 --keep-alive 5 --preload app:app"]
