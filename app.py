@@ -278,4 +278,6 @@ async def generate_image(request: Request):
 # FastAPI 啟動方式 (本地測試用，部署到 Cloud Run 會用 Dockerfile 裡的 uvicorn)
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8080)
+    # 這裡要抓環境變數的 PORT，如果沒有就預設 8080
+    port = int(os.environ.get("PORT", 8080))
+    uvicorn.run(app, host="0.0.0.0", port=port)
