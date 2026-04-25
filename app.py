@@ -54,7 +54,7 @@ HF_API_URL = "https://router.huggingface.co/hf-inference/models/black-forest-lab
 # 限制同時呼叫 AI 的人數，避免沖垮 API 或佔滿後端執行緒
 gemini_semaphore = asyncio.Semaphore(8)
 # 生圖最吃資源，一台容器只准 3 個同時跑，剩下的去排隊觸發自動擴展
-image_semaphore = asyncio.Semaphore(3)
+image_semaphore = asyncio.Semaphore(10)
 
 # --- 核心 AI 呼叫函式 ---
 async def call_gemini_api(prompt: str, system_instruction: str) -> str:
@@ -99,26 +99,28 @@ async def call_gemini_api(prompt: str, system_instruction: str) -> str:
 
 async def call_pollinations_api(user_sentence: str) -> str:
     if not user_sentence: return None
-    seed = random.randint(0, 999999)
-    # 物理性地改變 prompt，強迫 API 重新生圖
-    modified_prompt = f"{user_sentence} [{seed}]" 
-    encoded_prompt = quote(modified_prompt)
     
-    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?model=flux&width=512&height=512&nologo=true"
-    
-    async with httpx.AsyncClient(timeout=45.0) as client:
-        for attempt in range(2): # 現場 50 人，重試兩次就好，節省時間
+    # 建立一個持久的 Client 避免重複建立連線消耗資源
+    async with httpx.AsyncClient(timeout=30.0) as client: 
+        for attempt in range(2):
+            # 每次嘗試都換一個新 Seed，這比單純等待更有用
+            seed = random.randint(0, 999999)
+            modified_prompt = f"{user_sentence} [{seed}]" 
+            encoded_prompt = quote(modified_prompt)
+            url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?model=flux&width=512&height=512&nologo=true"
+            
             try:
                 response = await client.get(url)
                 if response.status_code == 200:
                     img_base64 = base64.b64encode(response.content).decode('utf-8')
                     return f"data:image/jpeg;base64,{img_base64}"
                 
-                print(f"Pollinations 嘗試第 {attempt+1} 次失敗，狀態碼: {response.status_code}")
-                await asyncio.sleep(1.5) 
+                # 如果 429 或 500，稍微睡一下下立刻重試
+                print(f"Pollinations 第 {attempt+1} 次嘗試失敗: {response.status_code}")
+                await asyncio.sleep(0.5) 
             except Exception as e:
-                print(f"Pollinations 異常: {e}")
-                await asyncio.sleep(1)
+                print(f"Pollinations 異常 ({attempt+1}): {e}")
+                await asyncio.sleep(0.5)
     return None
 
 # --- CSV 紀錄功能 ---
