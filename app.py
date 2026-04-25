@@ -1,19 +1,44 @@
 import os
 import json
-import requests
-import time
-from flask import Flask, render_template, request, jsonify
+import asyncio
+import httpx
 import base64
 import csv
+import random
+import time
+import threading  # 補回 csv_lock 需要的 threading
 from datetime import datetime
 from dotenv import load_dotenv
-import threading
-import random
+from urllib.parse import quote
+
+# FastAPI 核心組件
+from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse, HTMLResponse  # 補上 HTMLResponse
+from fastapi.staticfiles import StaticFiles             # 用於掛載靜態檔案
+from fastapi.templating import Jinja2Templates
 
 load_dotenv()
 
 # 初始化 Flask 應用
-app = Flask(__name__)
+app = FastAPI()
+
+csv_lock = threading.Lock()
+app.mount("/static", StaticFiles(directory="static"), name="static")
+templates = Jinja2Templates(directory="templates")
+
+# 全域變數載入資料
+try:
+    with open('static/data/easy_mode.json', 'r', encoding='utf-8') as f:
+        EASY_DATA = json.load(f)
+    with open('static/data/hard_mode.json', 'r', encoding='utf-8') as f:
+        HARD_DATA = json.load(f)
+except Exception as e:
+    print(f"警告：JSON 檔案載入失敗！{e}")
+    EASY_DATA, HARD_DATA = [], []
+
+def get_level_data(mode, level_idx):
+    data_source = EASY_DATA if mode == 'easy' else HARD_DATA
+    return next((item for item in data_source if item["level"] == int(level_idx)), None)
 
 # --- API 配置 ---
 API_KEY = os.getenv("GEMINI_API_KEY") 
@@ -26,86 +51,80 @@ GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta/models/"
 HF_TOKEN = os.getenv("HF_TOKEN")
 HF_API_URL = "https://router.huggingface.co/hf-inference/models/black-forest-labs/FLUX.1-schnell"
 
-csv_lock = threading.Lock()
 # 限制同時呼叫 AI 的人數，避免沖垮 API 或佔滿後端執行緒
-# 文字回饋較快，給 10 個名額；生圖很慢，給 6 個名額排隊
-gemini_semaphore = threading.Semaphore(10)
-image_semaphore = threading.Semaphore(6)
+gemini_semaphore = asyncio.Semaphore(8)
+# 生圖最吃資源，一台容器只准 3 個同時跑，剩下的去排隊觸發自動擴展
+image_semaphore = asyncio.Semaphore(3)
 
 # --- 核心 AI 呼叫函式 ---
-def call_gemini_api(prompt: str, system_instruction: str) -> str:
-    """呼叫 Gemini API，加入重試機制與精準錯誤處理。"""
+async def call_gemini_api(prompt: str, system_instruction: str) -> str:
     if not API_KEY:
-        return "回饋失敗：AI 服務未配置 (API Key 缺失)。"
+        return "回饋失敗：API Key 缺失。"
 
     url = f"{GEMINI_API_BASE}{GEMINI_TEXT_MODEL}:generateContent?key={API_KEY}"
-    headers = {"Content-Type": "application/json"}
     payload = {
         "contents": [{"parts": [{"text": prompt}]}],
-        "systemInstruction": {"parts": [{ "text": system_instruction }]},
+        "systemInstruction": {"parts": [{"text": system_instruction}]},
         "generationConfig": {"temperature": 0.5}
     }
 
-    max_retries = 3
-    for attempt in range(max_retries):
-        try:
-            response = requests.post(url, headers=headers, json=payload, timeout=20)
-            
-            # 處理 429 流量限制
-            if response.status_code == 429:
-                if attempt == max_retries - 1:
-                    return "回饋失敗：AI 老師現在學生太多了，請稍等幾秒再試。"
-                wait_time = (attempt + 1) * 3
-                time.sleep(wait_time)
-                continue
+    # 使用 AsyncClient 處理非同步請求
+    async with httpx.AsyncClient(timeout=25.0) as client:
+        for attempt in range(3):
+            try:
+                response = await client.post(url, json=payload)
                 
-            response.raise_for_status()
-            result = response.json()
-            
-            candidates = result.get('candidates', [])
-            if not candidates:
-                return "回饋失敗：AI 老師暫時說不出話（內容可能被過濾）。"
-
-            generated_text = candidates[0].get('content', {}).get('parts', [{}])[0].get('text')
-            return generated_text.strip() if generated_text else "回饋失敗：內容生成空值。"
-            
-        except Exception as e:
-            print(f"API 詳細錯誤訊息: {str(e)}")
-            if attempt == max_retries - 1:
-                return "回饋失敗：AI 老師連線異常，請稍後再試。"
-            time.sleep(1)
+                if response.status_code == 429:
+                    if attempt == 2:
+                        return "回饋失敗：AI 老師現在學生太多了。"
+                    await asyncio.sleep((attempt + 1) * 2) # 非同步等待，不卡死線程
+                    continue
+                
+                response.raise_for_status()
+                result = response.json()
+                
+                # 取得回傳文字
+                parts = result.get('candidates', [{}])[0].get('content', {}).get('parts', [])
+                if not parts:
+                    return "回饋失敗：AI 老師暫時說不出話。"
+                
+                return parts[0].get('text', '').strip()
+                
+            except Exception as e:
+                print(f"Gemini 嘗試第 {attempt+1} 次失敗: {e}")
+                if attempt == 2:
+                    return "回饋失敗：AI 老師連線異常。"
+                await asyncio.sleep(1)
     return "回饋失敗。"
 
-def call_pollinations_api(user_sentence: str) -> str:
-    if not user_sentence:
-        return None
-    
+async def call_pollinations_api(user_sentence: str) -> str:
+    if not user_sentence: return None
     seed = random.randint(0, 999999)
-    url = f"https://image.pollinations.ai/prompt/{user_sentence}?seed={seed}&model=flux&width=512&height=512&nologo=true"
+    # 物理性地改變 prompt，強迫 API 重新生圖
+    modified_prompt = f"{user_sentence} [{seed}]" 
+    encoded_prompt = quote(modified_prompt)
     
-    # 增加重試機制：給它三次機會，每次失敗稍微等一下再試
-    for attempt in range(3):
-        try:
-            # 加入 timeout 稍微長一點，因為生圖真的很慢
-            response = requests.get(url, timeout=40) 
-            
-            if response.status_code == 200:
-                img_base64 = base64.b64encode(response.content).decode('utf-8')
-                return f"data:image/jpeg;base64,{img_base64}"
-            
-            # 如果遇到 429 或 5xx，等一秒後重試
-            print(f"Pollinations 嘗試第 {attempt+1} 次失敗，狀態碼: {response.status_code}")
-            time.sleep(1.5) 
-            
-        except Exception as e:
-            print(f"Pollinations 請求異常: {e}")
-            time.sleep(1)
-            
-    return None # 三次都失敗才顯示休息
+    url = f"https://image.pollinations.ai/prompt/{encoded_prompt}?model=flux&width=512&height=512&nologo=true"
+    
+    async with httpx.AsyncClient(timeout=45.0) as client:
+        for attempt in range(2): # 現場 50 人，重試兩次就好，節省時間
+            try:
+                response = await client.get(url)
+                if response.status_code == 200:
+                    img_base64 = base64.b64encode(response.content).decode('utf-8')
+                    return f"data:image/jpeg;base64,{img_base64}"
+                
+                print(f"Pollinations 嘗試第 {attempt+1} 次失敗，狀態碼: {response.status_code}")
+                await asyncio.sleep(1.5) 
+            except Exception as e:
+                print(f"Pollinations 異常: {e}")
+                await asyncio.sleep(1)
+    return None
 
 # --- CSV 紀錄功能 ---
 def save_to_csv(data_dict):
-    file_path = 'record.csv'
+    # 關鍵：一定要寫在 /tmp 目錄下
+    file_path = '/tmp/record.csv'
     fieldnames = [
         'timestamp', 'level', 'feedback_round', 'selected_words', 
         'user_sentence', 'ai_feedback', 'word_stars', 'sentence_stars', 'total_stars'
@@ -113,6 +132,7 @@ def save_to_csv(data_dict):
     
     file_exists = os.path.isfile(file_path)
     try:
+        # 非同步環境下若怕衝突，可搭配原本的 csv_lock
         with csv_lock:
             with open(file_path, mode='a', newline='', encoding='utf-8-sig') as f:
                 writer = csv.DictWriter(f, fieldnames=fieldnames)
@@ -120,11 +140,10 @@ def save_to_csv(data_dict):
                     writer.writeheader()
                 writer.writerow(data_dict)
     except Exception as e:
-        print(f"CSV 寫入失敗: {e}")
+        print(f"CSV 寫入失敗 (權限或路徑問題): {e}")
 
 # --- AI 分析分析功能 ---
-# --- AI 分析分析功能 (修正參數數量，補上 round_index) ---
-def get_sentence_analysis(user_sentence: str, correct_selected: list, wrong_selected: list, missing_words: list, target_answers: list, sentence_prompt: str, round_index: int) -> str:
+async def get_sentence_analysis(user_sentence: str, correct_selected: list, wrong_selected: list, missing_words: list, target_answers: list, sentence_prompt: str, round_index: int) -> str:
     system_instruction = (
         "你是一位國中一年級英文老師。請根據『原始圖片包含的正確單字』進行回饋。"
         "1. 禁止使用任何 Markdown 符號（如 ** 或 __）。"
@@ -132,71 +151,69 @@ def get_sentence_analysis(user_sentence: str, correct_selected: list, wrong_sele
         "3. 畫面引導：必須嚴格參考『原始圖片正確單字』。每次建議增加一個簡單細節。"
     )
 
-    # 這裡可以用 round_index 來微調 Prompt 內容 (選用)
     prompt = (
         f"【教學現況】這是第 {round_index + 1} 次回饋。\n"
         f"圖片中真實存在的正確單字: {', '.join(target_answers)}\n"
         f"學生選中的正確單字: {', '.join(correct_selected)}\n"
-        f"學生選錯的單字: {', '.join(wrong_selected)}\n"
-        f"學生遺漏的單字: {', '.join(missing_words)}\n"
+        f"學生選中的錯誤單字: {', '.join(wrong_selected)}\n"
         f"學生目前造句: 『{user_sentence}』\n"
         f"要求句型: 『{sentence_prompt}』\n\n"
-        "請務必依照以下編號順序回報，以下三個段落每段之間換一行即可：\n"
-        "1. 單字提示：針對遺漏單字提供線索\n"
-        "2. 文法修正：檢查句子文法與單字拼法\n"
-        "3. 畫面引導建議：如何讓句子更接近圖片內容"
+        "請換行提供：1.單字提示、2.文法修正、3.畫面引導建議。"
     )
 
-    ai_critique = call_gemini_api(prompt, system_instruction)
+    # 關鍵：加上 await
+    ai_critique = await call_gemini_api(prompt, system_instruction)
     return ai_critique.replace("1. ", "\n1. ")
 
-# --- Flask 路由 ---
+# --- FastAPI 路由 ---
 
-@app.route("/")
-def home():
-    return render_template("index.html")
+@app.get("/", response_class=HTMLResponse)
+async def home(request: Request):
+    return templates.TemplateResponse("index.html", {"request": request})
 
-@app.route("/easy")
-def easy_mode():
-    return render_template("easy_mode.html")
+@app.get("/easy", response_class=HTMLResponse)
+async def easy_mode(request: Request):
+    return templates.TemplateResponse("easy_mode.html", {"request": request})
 
-@app.route("/hard")
-def hard_mode():
-    return render_template("hard_mode.html")
+@app.get("/hard", response_class=HTMLResponse)
+async def hard_mode(request: Request):
+    return templates.TemplateResponse("hard_mode.html", {"request": request})
 
-@app.route('/portfolio.html')
-def portfolio():
-    return render_template('portfolio.html')
+@app.get("/portfolio.html", response_class=HTMLResponse)
+async def portfolio(request: Request):
+    return templates.TemplateResponse("portfolio.html", {"request": request})
 
-@app.route("/api/ai_feedback", methods=["POST"])
-def get_ai_feedback():
-    with gemini_semaphore:
+@app.post("/api/ai_feedback")
+async def get_ai_feedback(request: Request):
+    async with gemini_semaphore:
         try:
-            data = request.get_json()
+            data = await request.json()
             mode = data.get('mode', 'easy')
             level_idx = data.get('level', 1)
             user_sentence = data.get('user_sentence', '').strip()
             sentence_prompt = data.get('sentence_prompt', '').strip()
             selected_cards = data.get('correct_words', []) 
-            round_index = int(data.get('feedback_count', 0)) # 0 或 1
+            round_index = int(data.get('feedback_count', 0))
             
             word_stars = int(data.get('word_stars', 0))
             sentence_stars = int(data.get('sentence_stars', 0))
             total_stars = word_stars + sentence_stars
 
-            json_file = f'static/data/{mode}_mode.json'
-            with open(json_file, 'r', encoding='utf-8') as f:
-                full_data = json.load(f)
+            # --- 修改部分：直接使用預載入的資料 ---
+            current_level_data = get_level_data(mode, level_idx)
             
-            current_level_data = next((item for item in full_data if item["level"] == int(level_idx)), None)
-            standard_answers = [a.lower() for a in current_level_data["answer"]] if current_level_data else []
+            if not current_level_data:
+                return JSONResponse(status_code=404, content={"feedback": "找不到關卡資料。"})
             
+            standard_answers = [a.lower() for a in current_level_data["answer"]]
+            # ------------------------------------
+
             correct_selected = [w for w in selected_cards if w.lower() in standard_answers]
             wrong_selected = [w for w in selected_cards if w.lower() not in standard_answers]
             missing_words = [w for w in standard_answers if w.lower() not in [x.lower() for x in selected_cards]]
 
-            # 呼叫分析，傳入 round_index 讓 AI 調整語氣
-            feedback = get_sentence_analysis(
+            # 呼叫非同步分析
+            feedback = await get_sentence_analysis(
                 user_sentence, correct_selected, wrong_selected, 
                 missing_words, standard_answers, sentence_prompt, round_index
             )
@@ -208,31 +225,31 @@ def get_ai_feedback():
                 'feedback_round': f"第 {round_index + 1} 次回饋 (總共 2 次)",
                 'selected_words': ",".join(selected_cards),
                 'user_sentence': user_sentence,
-                'ai_feedback': feedback.replace('\n', ' '), # 移除換行避免 CSV 跑版
+                'ai_feedback': feedback.replace('\n', ' '),
                 'word_stars': word_stars,
                 'sentence_stars': sentence_stars,
                 'total_stars': total_stars
             }
             save_to_csv(log_data)
 
-            return jsonify({"feedback": feedback})
+            return {"feedback": feedback}
         except Exception as e:
-            print(f"Error: {e}")
-            return jsonify({"feedback": "伺服器處理錯誤。"}), 500
+            print(f"Error in ai_feedback: {e}")
+            return JSONResponse(status_code=500, content={"feedback": "伺服器處理錯誤。"})
 
-@app.route("/api/generate_image", methods=["POST"])
-def generate_image():
-    with image_semaphore:
+@app.post("/api/generate_image")
+async def generate_image(request: Request):
+    async with image_semaphore:
         try:
-            data = request.get_json()
+            data = await request.json()
             user_sentence = data.get('user_sentence', '').strip()
             mode = data.get('mode', 'easy')
             level_idx = data.get('level', 1)
             word_stars = int(data.get('word_stars', 0))
             sentence_stars = int(data.get('sentence_stars', 0))
 
-            # --- 這裡改用 Pollinations ---
-            image_base64_url = call_pollinations_api(user_sentence)
+            # 非同步呼叫 Pollinations
+            image_base64_url = await call_pollinations_api(user_sentence)
             
             log_data = {
                 'timestamp': datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
@@ -248,16 +265,17 @@ def generate_image():
             save_to_csv(log_data)
 
             if not image_base64_url:
-                return jsonify({"error": "image_failed"}), 200
+                return {"error": "image_failed"}
 
-            # 前端 JS 接收到這個 JSON 後，會直接把 URL 塞進 <img> 標籤
-            return jsonify({
+            return {
                 "image_url": image_base64_url,
                 "status": "success"
-            })
+            }
         except Exception as e:
             print(f"路由報錯: {e}")
-            return jsonify({"error": "server_error"}), 500
-    
+            return JSONResponse(status_code=500, content={"error": "server_error"})
+
+# FastAPI 啟動方式 (本地測試用，部署到 Cloud Run 會用 Dockerfile 裡的 uvicorn)
 if __name__ == "__main__":
-    app.run(debug=True, host='0.0.0.0', port=8080)
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8080)
