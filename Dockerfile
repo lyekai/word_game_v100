@@ -1,4 +1,3 @@
-# 1-6 步維持原樣
 # 1. 使用輕量的 Python 映像檔
 FROM python:3.11-slim
 
